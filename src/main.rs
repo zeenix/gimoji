@@ -7,8 +7,10 @@ use crossterm::{
 use std::{error::Error, fs::read_to_string, io, path::PathBuf};
 use tui::{
     backend::CrosstermBackend,
+    layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    text::Span,
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Terminal,
 };
 
@@ -48,14 +50,44 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
     let mut state = ListState::default();
     state.select(Some(0));
+    let default_search_text = " (Use arrow keys or type to search)";
+    let mut search_text = String::new();
 
     loop {
         terminal.draw(|f| {
+            // ? Choose a gitmoji: (Use arrow keys or type to search)
+            let chunks = Layout::default()
+                .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+                .margin(1)
+                .split(f.size());
+
+            // The text at the top.
+            let text = if search_text.is_empty() {
+                default_search_text
+            } else {
+                &search_text
+            };
+            let text = Paragraph::new(Span::styled(
+                text,
+                Style::default().add_modifier(Modifier::DIM),
+            ))
+            .block(
+                Block::default()
+                    .title("Search an emoji")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::White)),
+            );
+            f.render_widget(text, chunks[0]);
+
+            // The emoji list.
             let items: Vec<_> = emojis
                 .iter()
-                .map(|emoji| {
+                .filter_map(|emoji| {
+                    if !search_text.is_empty() && !emoji.description.contains(&search_text) {
+                        return None;
+                    }
                     let s = format!("{} - {} - {}", emoji.emoji, emoji.code, emoji.description);
-                    ListItem::new(s)
+                    Some(ListItem::new(s))
                 })
                 .collect();
             let list = List::new(items)
@@ -71,8 +103,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                         .fg(Color::Green),
                 )
                 .highlight_symbol("❯");
-            let size = f.size();
-            f.render_stateful_widget(list, size, &mut state);
+            f.render_stateful_widget(list, chunks[1], &mut state);
         })?;
 
         match read()? {
@@ -87,6 +118,12 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                     let i = state.selected().unwrap();
                     let i = if i == 0 { emojis.len() - 1 } else { i - 1 };
                     state.select(Some(i));
+                }
+                KeyCode::Char(c) => search_text.push(c),
+                KeyCode::Backspace => {
+                    search_text.pop();
+
+                    ()
                 }
                 _ => {}
             },
