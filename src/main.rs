@@ -102,7 +102,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                         .add_modifier(Modifier::BOLD)
                         .fg(Color::Green),
                 )
-                .highlight_symbol("❯");
+                .highlight_symbol("❯ ");
             f.render_stateful_widget(list, chunks[1], &mut state);
         })?;
 
