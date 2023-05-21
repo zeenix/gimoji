@@ -50,7 +50,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
     let mut state = ListState::default();
     state.select(Some(0));
-    let default_search_text = " (Use arrow keys or type to search)";
+    let default_search_text = "Use arrow keys or type to search";
     let mut search_text = String::new();
 
     loop {
@@ -70,6 +70,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             } else {
                 (&*search_text, Style::default())
             };
+            let text = format!(" {}", text);
             let text = Paragraph::new(Span::styled(text, style)).block(
                 Block::default()
                     .title("Search an emoji")
