@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn select_emoji() -> Result<String, Box<dyn Error>> {
-    let mut emojis = load_emojis()?.gitmojis;
+    let emojis = load_emojis()?.gitmojis;
 
     // setup terminal
     enable_raw_mode()?;
@@ -53,7 +53,11 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
     let default_search_text = "Use arrow keys or type to search";
     let mut search_text = String::new();
 
-    loop {
+    let selected = loop {
+        let emojis: Vec<&Emoji> = emojis
+            .iter()
+            .filter(|emoji| search_text.is_empty() || emoji.contains(&search_text))
+            .collect();
         terminal.draw(|f| {
             // ? Choose a gitmoji: (Use arrow keys or type to search)
             let chunks = Layout::default()
@@ -82,12 +86,9 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             // The emoji list.
             let emojis: Vec<_> = emojis
                 .iter()
-                .filter_map(|emoji| {
-                    if !search_text.is_empty() && !emoji.contains(&search_text) {
-                        return None;
-                    }
+                .map(|emoji| {
                     let s = format!("{} - {} - {}", emoji.emoji, emoji.code, emoji.description);
-                    Some(ListItem::new(s))
+                    ListItem::new(s)
                 })
                 .collect();
             let list = List::new(emojis)
@@ -108,7 +109,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
         match read()? {
             Event::Key(event) => match event.code {
-                KeyCode::Enter => break,
+                KeyCode::Enter => break emojis[state.selected().unwrap()].emoji.clone(),
                 KeyCode::Down => {
                     let i = state.selected().unwrap();
                     let i = if i >= emojis.len() - 1 { 0 } else { i + 1 };
@@ -129,14 +130,14 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             },
             _ => (),
         }
-    }
+    };
 
     // restore terminal
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen,)?;
     terminal.show_cursor()?;
 
-    Ok(emojis.remove(state.selected().unwrap()).emoji)
+    Ok(selected)
 }
 
 fn load_emojis() -> Result<Emojis, Box<dyn Error>> {
