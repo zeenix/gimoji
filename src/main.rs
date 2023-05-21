@@ -62,16 +62,15 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                 .split(f.size());
 
             // The text at the top.
-            let text = if search_text.is_empty() {
-                default_search_text
+            let (text, style) = if search_text.is_empty() {
+                (
+                    default_search_text,
+                    Style::default().add_modifier(Modifier::DIM),
+                )
             } else {
-                &search_text
+                (&*search_text, Style::default())
             };
-            let text = Paragraph::new(Span::styled(
-                text,
-                Style::default().add_modifier(Modifier::DIM),
-            ))
-            .block(
+            let text = Paragraph::new(Span::styled(text, style)).block(
                 Block::default()
                     .title("Search an emoji")
                     .borders(Borders::ALL)
