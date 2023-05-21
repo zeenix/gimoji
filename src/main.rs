@@ -83,7 +83,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             let items: Vec<_> = emojis
                 .iter()
                 .filter_map(|emoji| {
-                    if !search_text.is_empty() && !emoji.description.contains(&search_text) {
+                    if !search_text.is_empty() && !emoji.contains(&search_text) {
                         return None;
                     }
                     let s = format!("{} - {} - {}", emoji.emoji, emoji.code, emoji.description);
@@ -181,8 +181,16 @@ struct Emoji {
     code: String,
     description: String,
     emoji: String,
-    #[allow(unused)]
     entity: String,
-    #[allow(unused)]
     name: String,
+}
+
+impl Emoji {
+    fn contains(&self, needle: &str) -> bool {
+        self.code.contains(needle)
+            || self.description.contains(needle)
+            || self.emoji.contains(needle)
+            || self.entity.contains(needle)
+            || self.name.contains(needle)
+    }
 }
