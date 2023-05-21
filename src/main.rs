@@ -80,7 +80,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             f.render_widget(text, chunks[0]);
 
             // The emoji list.
-            let items: Vec<_> = emojis
+            let emojis: Vec<_> = emojis
                 .iter()
                 .filter_map(|emoji| {
                     if !search_text.is_empty() && !emoji.contains(&search_text) {
@@ -90,7 +90,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                     Some(ListItem::new(s))
                 })
                 .collect();
-            let list = List::new(items)
+            let list = List::new(emojis)
                 .block(
                     Block::default()
                         .title("Select an emoji")
