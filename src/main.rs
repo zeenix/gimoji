@@ -12,6 +12,13 @@ use tui::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let selected = select_emoji()?;
+    println!("{}", selected);
+
+    Ok(())
+}
+
+fn select_emoji() -> Result<&'static str, Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -37,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         match read()? {
             Event::Key(event) => match event.code {
-                KeyCode::Char('q') => break,
+                KeyCode::Enter => break,
                 KeyCode::Down => {
                     let i = state.selected().unwrap();
                     let i = if i >= items.len() - 1 { 0 } else { i + 1 };
@@ -63,5 +70,5 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
     terminal.show_cursor()?;
 
-    Ok(())
+    Ok(items[state.selected().unwrap()])
 }
