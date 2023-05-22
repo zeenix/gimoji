@@ -113,7 +113,10 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
         match read()? {
             Event::Key(event) => match event.code {
-                KeyCode::Enter => break emojis[state.selected().unwrap()].emoji.clone(),
+                KeyCode::Enter => match emojis.get(state.selected().unwrap()) {
+                    Some(emoji) => break emoji.emoji.clone(),
+                    None => (),
+                },
                 KeyCode::Down => {
                     let i = state.selected().unwrap();
                     let i = if i >= emojis.len() - 1 { 0 } else { i + 1 };
