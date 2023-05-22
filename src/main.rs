@@ -1,4 +1,5 @@
 mod emojis;
+mod search_entry;
 mod terminal;
 
 use clap::{command, Parser};
@@ -7,11 +8,11 @@ use std::error::Error;
 use tui::{
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::Span,
-    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
+    widgets::{Block, Borders, Row, Table, TableState},
 };
 
 use emojis::{Emoji, Emojis};
+use search_entry::SearchEntry;
 use terminal::Terminal;
 
 /// Select emoji for git commit message.
@@ -42,16 +43,16 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
     let emojis = Emojis::load()?.gitmojis;
 
     let mut terminal = Terminal::setup()?;
+    let mut search_entry = SearchEntry::default();
 
     let mut state = TableState::default();
     state.select(Some(0));
-    let default_search_text = "Use arrow keys or type to search";
-    let mut search_text = String::new();
 
     let selected = loop {
+        let search_text = search_entry.text();
         let emojis: Vec<&Emoji> = emojis
             .iter()
-            .filter(|emoji| search_text.is_empty() || emoji.contains(&search_text))
+            .filter(|emoji| search_text.is_empty() || emoji.contains(search_text))
             .collect();
         if state.selected().unwrap() >= emojis.len() {
             // Reset the selection if the list goes shorter than the selected index.
@@ -63,23 +64,8 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                 .margin(1)
                 .split(f.size());
 
-            // The text at the top.
-            let (text, style) = if search_text.is_empty() {
-                (
-                    default_search_text,
-                    Style::default().add_modifier(Modifier::DIM),
-                )
-            } else {
-                (&*search_text, Style::default())
-            };
-            let text = format!(" {}", text);
-            let text = Paragraph::new(Span::styled(text, style)).block(
-                Block::default()
-                    .title("Search an emoji")
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::White)),
-            );
-            f.render_widget(text, chunks[0]);
+            // The search entry goes at the top.
+            f.render_widget(&search_entry, chunks[0]);
 
             // The emoji list.
             let emojis = emojis
@@ -123,9 +109,9 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                     let i = if i == 0 { emojis.len() - 1 } else { i - 1 };
                     state.select(Some(i));
                 }
-                KeyCode::Char(c) => search_text.push(c),
+                KeyCode::Char(c) => search_entry.append(c),
                 KeyCode::Backspace => {
-                    search_text.pop();
+                    search_entry.delete_last();
 
                     ()
                 }
