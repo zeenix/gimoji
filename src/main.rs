@@ -1,10 +1,12 @@
+mod emojis;
+
 use clap::{command, Parser};
 use crossterm::{
     event::{read, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, fs::read_to_string, io, path::PathBuf};
+use std::{error::Error, io};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Layout},
@@ -13,6 +15,8 @@ use tui::{
     widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     Terminal,
 };
+
+use emojis::{Emoji, Emojis};
 
 /// Select emoji for git commit message.
 #[derive(Parser, Debug)]
@@ -27,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
     if args.update_cache {
-        update_cache()?;
+        emojis::update_cache()?;
 
         return Ok(());
     }
@@ -39,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn select_emoji() -> Result<String, Box<dyn Error>> {
-    let emojis = load_emojis()?.gitmojis;
+    let emojis = Emojis::load()?.gitmojis;
 
     // setup terminal
     enable_raw_mode()?;
@@ -90,7 +94,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             // The emoji list.
             let emojis = emojis
                 .iter()
-                .map(|emoji| Row::new(vec![&*emoji.emoji, &*emoji.code, &*emoji.description]));
+                .map(|emoji| Row::new(vec![emoji.emoji(), emoji.code(), emoji.description()]));
             let table = Table::new(emojis)
                 .block(
                     Block::default()
@@ -116,7 +120,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
         match read()? {
             Event::Key(event) => match event.code {
                 KeyCode::Enter => match emojis.get(state.selected().unwrap()) {
-                    Some(emoji) => break emoji.emoji.clone(),
+                    Some(emoji) => break emoji.emoji().to_string(),
                     None => (),
                 },
                 KeyCode::Down => {
@@ -147,60 +151,4 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
     terminal.show_cursor()?;
 
     Ok(selected)
-}
-
-fn load_emojis() -> Result<Emojis, Box<dyn Error>> {
-    let path = cache_dir()?.join(EMOJI_CACHE_FILE);
-    let emojis_json = match read_to_string(path) {
-        Ok(s) => s,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => update_cache()?,
-        Err(_) => return Err("Failed to read emoji cache".into()),
-    };
-    let emojis: Emojis = serde_json::from_str(&emojis_json)?;
-
-    Ok(emojis)
-}
-
-fn update_cache() -> Result<String, Box<dyn Error>> {
-    println!("Updating emoji cache...");
-    let emojis_json = reqwest::blocking::get(EMOJI_URL)?.text()?;
-    let path = cache_dir()?.join(EMOJI_CACHE_FILE);
-    std::fs::write(path, &emojis_json)?;
-
-    Ok(emojis_json)
-}
-
-fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
-    let path = dirs::cache_dir().unwrap().join(CACHE_DIR);
-    std::fs::create_dir_all(&path)?;
-
-    Ok(path)
-}
-
-const CACHE_DIR: &str = "gimoji";
-const EMOJI_CACHE_FILE: &str = "emojis.json";
-const EMOJI_URL: &str = "https://gitmoji.dev/api/gitmojis";
-
-#[derive(serde::Deserialize, Debug)]
-struct Emojis {
-    gitmojis: Vec<Emoji>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Emoji {
-    code: String,
-    description: String,
-    emoji: String,
-    entity: String,
-    name: String,
-}
-
-impl Emoji {
-    fn contains(&self, needle: &str) -> bool {
-        self.code.contains(needle)
-            || self.description.contains(needle)
-            || self.emoji.contains(needle)
-            || self.entity.contains(needle)
-            || self.name.contains(needle)
-    }
 }
