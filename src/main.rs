@@ -1,22 +1,18 @@
 mod emojis;
+mod terminal;
 
 use clap::{command, Parser};
-use crossterm::{
-    event::{read, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use std::{error::Error, io};
+use crossterm::event::{read, Event, KeyCode};
+use std::error::Error;
 use tui::{
-    backend::CrosstermBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Paragraph, Row, Table, TableState},
-    Terminal,
 };
 
 use emojis::{Emoji, Emojis};
+use terminal::Terminal;
 
 /// Select emoji for git commit message.
 #[derive(Parser, Debug)]
@@ -45,12 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn select_emoji() -> Result<String, Box<dyn Error>> {
     let emojis = Emojis::load()?.gitmojis;
 
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = Terminal::setup()?;
 
     let mut state = TableState::default();
     state.select(Some(0));
@@ -143,11 +134,6 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             _ => (),
         }
     };
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen,)?;
-    terminal.show_cursor()?;
 
     Ok(selected)
 }
