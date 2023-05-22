@@ -67,7 +67,6 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             state.select(Some(0));
         }
         terminal.draw(|f| {
-            // ? Choose a gitmoji: (Use arrow keys or type to search)
             let chunks = Layout::default()
                 .constraints([Constraint::Percentage(5), Constraint::Percentage(95)].as_ref())
                 .margin(1)
