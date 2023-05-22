@@ -10,7 +10,7 @@ use tui::{
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     Terminal,
 };
 
@@ -48,7 +48,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut state = ListState::default();
+    let mut state = TableState::default();
     state.select(Some(0));
     let default_search_text = "Use arrow keys or type to search";
     let mut search_text = String::new();
@@ -65,7 +65,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
         terminal.draw(|f| {
             // ? Choose a gitmoji: (Use arrow keys or type to search)
             let chunks = Layout::default()
-                .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+                .constraints([Constraint::Percentage(5), Constraint::Percentage(95)].as_ref())
                 .margin(1)
                 .split(f.size());
 
@@ -88,14 +88,10 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             f.render_widget(text, chunks[0]);
 
             // The emoji list.
-            let emojis: Vec<_> = emojis
+            let emojis = emojis
                 .iter()
-                .map(|emoji| {
-                    let s = format!("{} - {} - {}", emoji.emoji, emoji.code, emoji.description);
-                    ListItem::new(s)
-                })
-                .collect();
-            let list = List::new(emojis)
+                .map(|emoji| Row::new(vec![&*emoji.emoji, &*emoji.code, &*emoji.description]));
+            let table = Table::new(emojis)
                 .block(
                     Block::default()
                         .title("Select an emoji")
@@ -107,8 +103,14 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
                         .add_modifier(Modifier::BOLD)
                         .fg(Color::Green),
                 )
-                .highlight_symbol("❯ ");
-            f.render_stateful_widget(list, chunks[1], &mut state);
+                .highlight_symbol("❯ ")
+                .widths(&[
+                    Constraint::Percentage(3),
+                    Constraint::Percentage(12),
+                    Constraint::Percentage(85),
+                ])
+                .column_spacing(2);
+            f.render_stateful_widget(table, chunks[1], &mut state);
         })?;
 
         match read()? {
