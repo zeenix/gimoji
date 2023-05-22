@@ -58,6 +58,10 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             .iter()
             .filter(|emoji| search_text.is_empty() || emoji.contains(&search_text))
             .collect();
+        if state.selected().unwrap() >= emojis.len() {
+            // Reset the selection if the list goes shorter than the selected index.
+            state.select(Some(0));
+        }
         terminal.draw(|f| {
             // ? Choose a gitmoji: (Use arrow keys or type to search)
             let chunks = Layout::default()
