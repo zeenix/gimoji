@@ -6,7 +6,12 @@ mod terminal;
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
 use selection_view::SelectionView;
-use std::{error::Error, fs::File, io::Write};
+use std::{
+    error::Error,
+    fs::{File, Permissions},
+    io::Write,
+    os::unix::prelude::PermissionsExt,
+};
 use tui::layout::{Constraint, Layout};
 
 use emojis::Emojis;
@@ -17,6 +22,10 @@ use terminal::Terminal;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// Initialize gimoji as a commit message hook.
+    #[arg(short, long)]
+    init: bool,
+
     /// Update local emoji cache.
     #[arg(short, long)]
     update_cache: bool,
@@ -29,7 +38,11 @@ struct Args {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    if args.update_cache {
+    if args.init {
+        install_hook()?;
+
+        return Ok(());
+    } else if args.update_cache {
         emojis::update_cache()?;
 
         return Ok(());
@@ -106,3 +119,19 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
     Ok(selected)
 }
+
+fn install_hook() -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(HOOK_PATH)?;
+    file.write_all(HOOK_CONTENT.as_bytes())?;
+    file.set_permissions(Permissions::from_mode(0o744))?;
+
+    Ok(())
+}
+
+const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
+const HOOK_CONTENT: &str = r#"
+#!/usr/bin/env bash
+# gimoji as a commit hook
+exec < /dev/tty
+gimoji --hook $1 $2
+"#;
