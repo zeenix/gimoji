@@ -6,12 +6,9 @@ mod terminal;
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
 use selection_view::SelectionView;
-use std::{
-    error::Error,
-    fs::{File, Permissions},
-    io::Write,
-    os::unix::prelude::PermissionsExt,
-};
+use std::{error::Error, fs::File, io::Write};
+#[cfg(unix)]
+use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
 use tui::layout::{Constraint, Layout};
 
 use emojis::Emojis;
@@ -123,6 +120,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 fn install_hook() -> Result<(), Box<dyn Error>> {
     let mut file = File::create(HOOK_PATH)?;
     file.write_all(HOOK_CONTENT.as_bytes())?;
+    #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
     Ok(())
