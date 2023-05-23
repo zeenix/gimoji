@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Paragraph, Widget},
@@ -24,7 +24,7 @@ impl SearchEntry {
 }
 
 impl Widget for &SearchEntry {
-    fn render(self, area: tui::layout::Rect, buf: &mut tui::buffer::Buffer) {
+    fn render(self, area: ratatui::layout::Rect, buf: &mut ratatui::buffer::Buffer) {
         let (text, style) = if self.text.is_empty() {
             (DEFAULT_TEXT, Style::default().add_modifier(Modifier::DIM))
         } else {
