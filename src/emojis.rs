@@ -21,7 +21,7 @@ impl Emojis {
 
 pub fn update_cache() -> Result<String, Box<dyn Error>> {
     println!("Updating emoji cache...");
-    let emojis_json = reqwest::blocking::get(EMOJI_URL)?.text()?;
+    let emojis_json = ureq::get(EMOJI_URL).call()?.into_string()?;
     let path = cache_dir()?.join(EMOJI_CACHE_FILE);
     std::fs::write(path, &emojis_json)?;
 

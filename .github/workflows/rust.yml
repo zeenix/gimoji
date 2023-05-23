@@ -8,7 +8,10 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     env:
       RUSTFLAGS: -D warnings
     steps:
@@ -16,14 +19,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: x86_64-pc-windows-gnu, x86_64-apple-darwin, x86_64-unknown-freebsd
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Check build
-        run: |
-          cargo check
-          cargo check --target x86_64-pc-windows-gnu
-          cargo check --target x86_64-apple-darwin
+        run: cargo check
 
   lint:
     runs-on: ubuntu-latest
