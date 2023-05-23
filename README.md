@@ -1,6 +1,6 @@
 # gimoji
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/zeenix/gimoji/ci.yml?branch=main&style=flat-square)](https://github.com/zeenix/gimoji/actions?query=workflow%3ACI+branch%3Amain)
+[![Build Status](https://github.com/zeenix/gimoji/actions/workflows/rust.yml/badge.svg)](https://github.com/zeenix/gimoji/actions/workflows/rust.yml)
 [![gitmoji badge](https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg?style=flat-square)](https://github.com/carloscuesta/gitmoji)
 
 ![screenshot](screenshot.png)
