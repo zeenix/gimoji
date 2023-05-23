@@ -1,5 +1,6 @@
 [package]
 name = "gimoji"
+description = "Easily add emojis to your git commit messages 🎉"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
