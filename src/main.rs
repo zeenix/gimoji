@@ -5,11 +5,11 @@ mod terminal;
 
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
+use ratatui::layout::{Constraint, Layout};
 use selection_view::SelectionView;
 use std::{error::Error, fs::File, io::Write};
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
-use tui::layout::{Constraint, Layout};
 
 use emojis::Emojis;
 use search_entry::SearchEntry;

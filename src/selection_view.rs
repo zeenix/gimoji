@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
     style::{Color, Modifier, Style},
