@@ -6,12 +6,9 @@ mod terminal;
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
 use selection_view::SelectionView;
-use std::{
-    error::Error,
-    fs::{File, Permissions},
-    io::Write,
-    os::unix::prelude::PermissionsExt,
-};
+use std::{error::Error, fs::File, io::Write};
+#[cfg(unix)]
+use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
 use tui::layout::{Constraint, Layout};
 
 use emojis::Emojis;
@@ -48,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let commit_file_path = if args.hook.len() > 0 {
+    let commit_file_path = if !args.hook.is_empty() {
         if args.hook.len() > 1 {
             // For now, we only modify a completely new commit.
             return Ok(());
@@ -82,7 +79,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 
     let selected = loop {
         let search_text = search_entry.text();
-        let mut filtered_view = selection_view.filtered_view(&search_text);
+        let mut filtered_view = selection_view.filtered_view(search_text);
 
         terminal.draw(|f| {
             let chunks = Layout::default()
@@ -97,23 +94,21 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             f.render_widget(&mut filtered_view, chunks[1]);
         })?;
 
-        match read()? {
-            Event::Key(event) => match event.code {
-                KeyCode::Enter => match filtered_view.selected() {
-                    Some(emoji) => break emoji.emoji().to_string(),
-                    None => (),
-                },
+        if let Event::Key(event) = read()? {
+            match event.code {
+                KeyCode::Enter => {
+                    if let Some(emoji) = filtered_view.selected() {
+                        break emoji.emoji().to_string();
+                    }
+                }
                 KeyCode::Down => filtered_view.move_down(),
                 KeyCode::Up => filtered_view.move_up(),
                 KeyCode::Char(c) => search_entry.append(c),
                 KeyCode::Backspace => {
                     search_entry.delete_last();
-
-                    ()
                 }
                 _ => {}
-            },
-            _ => (),
+            }
         }
     };
 
@@ -123,6 +118,7 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
 fn install_hook() -> Result<(), Box<dyn Error>> {
     let mut file = File::create(HOOK_PATH)?;
     file.write_all(HOOK_CONTENT.as_bytes())?;
+    #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
     Ok(())
