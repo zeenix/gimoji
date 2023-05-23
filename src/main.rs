@@ -6,7 +6,7 @@ mod terminal;
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
 use selection_view::SelectionView;
-use std::error::Error;
+use std::{error::Error, fs::File, io::Write};
 use tui::layout::{Constraint, Layout};
 
 use emojis::Emojis;
@@ -20,6 +20,10 @@ struct Args {
     /// Update local emoji cache.
     #[arg(short, long)]
     update_cache: bool,
+
+    /// Run as git commit hook.
+    #[arg(long, value_delimiter = ' ', num_args = 1..3)]
+    hook: Vec<String>,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -31,8 +35,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
+    let commit_file_path = if args.hook.len() > 0 {
+        if args.hook.len() > 1 {
+            // For now, we only modify a completely new commit.
+            return Ok(());
+        }
+
+        Some(&args.hook[0])
+    } else {
+        None
+    };
+
     let selected = select_emoji()?;
-    println!("{}", selected);
+
+    if let Some(path) = commit_file_path {
+        // Just write the emoji to the file.
+        let mut file = File::create(path)?;
+        let prefix = format!("{} ", selected);
+        file.write_all(prefix.as_bytes())?;
+    } else {
+        println!("{}", selected);
+    }
 
     Ok(())
 }
