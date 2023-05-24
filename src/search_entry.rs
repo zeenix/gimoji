@@ -21,6 +21,10 @@ impl SearchEntry {
     pub fn delete_last(&mut self) {
         self.text.pop();
     }
+
+    pub fn delete_all(&mut self) {
+        self.text.clear();
+    }
 }
 
 impl Widget for &SearchEntry {

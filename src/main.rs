@@ -56,7 +56,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         None
     };
 
-    let selected = select_emoji()?;
+    let selected = match select_emoji()? {
+        Some(s) => s,
+        None => return Ok(()),
+    };
 
     if let Some(path) = commit_file_path {
         // Just write the emoji to the file.
@@ -70,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn select_emoji() -> Result<String, Box<dyn Error>> {
+fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
     let emojis = Emojis::load()?.gitmojis;
 
     let mut terminal = Terminal::setup()?;
@@ -98,7 +101,14 @@ fn select_emoji() -> Result<String, Box<dyn Error>> {
             match event.code {
                 KeyCode::Enter => {
                     if let Some(emoji) = filtered_view.selected() {
-                        break emoji.emoji().to_string();
+                        break Some(emoji.emoji().to_string());
+                    }
+                }
+                KeyCode::Esc => {
+                    if search_text.is_empty() {
+                        break None;
+                    } else {
+                        search_entry.delete_all();
                     }
                 }
                 KeyCode::Down => filtered_view.move_down(),
