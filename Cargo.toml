@@ -4,6 +4,11 @@ description = "Easily add emojis to your git commit messages 🎉"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
+repository = "https://github.com/zeenix/gimoji"
+keywords = ["CLI", "git", "emoji"]
+categories = ["development-tools"]
+include = ["screenshot.png"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
