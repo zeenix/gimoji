@@ -41,7 +41,7 @@ gimoji --update-cache
 
 ## Rationale
 
-[git-cli] while being a great tool, can be considerably [slow]. Hence this project. `gimoji` has a
+[gitmoji-cli] while being a great tool, can be considerably [slow]. Hence this project. `gimoji` has a
 few differences:
 
 * it will launch a full-screen terminal UI to choose an emoji, hence 
