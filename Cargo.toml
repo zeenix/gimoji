@@ -8,7 +8,6 @@ authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
 repository = "https://github.com/zeenix/gimoji"
 keywords = ["CLI", "git", "emoji"]
 categories = ["development-tools"]
-include = ["screenshot.png"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
