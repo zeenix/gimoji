@@ -1,5 +1,7 @@
 use std::{error::Error, fs::read_to_string, io, path::PathBuf};
 
+use regex::Regex;
+
 #[derive(serde::Deserialize, Debug)]
 pub struct Emojis {
     pub gitmojis: Vec<Emoji>,
@@ -49,12 +51,12 @@ pub struct Emoji {
 }
 
 impl Emoji {
-    pub fn contains(&self, needle: &str) -> bool {
-        self.code.contains(needle)
-            || self.description.contains(needle)
-            || self.emoji.contains(needle)
-            || self.entity.contains(needle)
-            || self.name.contains(needle)
+    pub fn contains(&self, pattern: &Regex) -> bool {
+        pattern.is_match(&self.code)
+            || pattern.is_match(&self.description)
+            || pattern.is_match(&self.emoji)
+            || pattern.is_match(&self.entity)
+            || pattern.is_match(&self.name)
     }
 
     pub fn code(&self) -> &str {
