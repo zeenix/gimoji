@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/zeenix/gimoji/actions/workflows/rust.yml/badge.svg)](https://github.com/zeenix/gimoji/actions/workflows/rust.yml)
 [![gitmoji badge](https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg?style=flat-square)](https://github.com/carloscuesta/gitmoji)
 
-![screenshot](screenshot.png)
+![./screenshot](screenshot.png)
 
 A CLI tool that makes it easy to add emojis to your git commit messages. It's very similar to (and
 is based on) [gitmoji-cli] but written in Rust.
