@@ -3,6 +3,7 @@ mod search_entry;
 mod selection_view;
 mod terminal;
 
+use arboard::Clipboard;
 use clap::{command, Parser};
 use crossterm::event::{read, Event, KeyCode};
 use ratatui::layout::{Constraint, Layout};
@@ -67,7 +68,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let prefix = format!("{} ", selected);
         file.write_all(prefix.as_bytes())?;
     } else {
-        println!("{}", selected);
+        Clipboard::new()?.set_text(&selected)?;
+        println!("Copied {} to the clipboard", selected);
     }
 
     Ok(())
