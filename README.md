@@ -26,7 +26,7 @@ gimoji --install-hook
 Now, whenever you run `git commit`, `gimoji` will kick in and prompt you to choose an emoji.
 
 If you launch `gimoji` directly without any arguments, it will prompt you to choose an emoji and
-then simply print your choice on the console.
+then copy your choice to the system clipboard.
 
 Use `--help` to see all the available options.
 
