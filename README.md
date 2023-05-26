@@ -17,10 +17,11 @@ cargo install -f gimoji
 ## Usage
 
 `gimoji` is primarily intended to be used as a git commit hook. Once installed, ask `gimoji` to
-install the hook:
+install the hook in your respositry:
 
 ```bash
-gimoji --install-hook
+cd /path/to/your/project/
+gimoji --init
 ```
 
 Now, whenever you run `git commit`, `gimoji` will kick in and prompt you to choose an emoji.
