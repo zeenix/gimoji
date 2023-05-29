@@ -30,7 +30,7 @@ pub fn update_cache() -> Result<String, Box<dyn Error>> {
     Ok(emojis_json)
 }
 
-fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
+pub fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
     let path = dirs::cache_dir().unwrap().join(CACHE_DIR);
     std::fs::create_dir_all(&path)?;
 
