@@ -31,6 +31,10 @@ struct Args {
     /// Run as git commit hook.
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
+
+    /// Print the local emoji cache path.
+    #[arg(short, long, default_value_t = false)]
+    cache_path: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -42,6 +46,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     } else if args.update_cache {
         emojis::update_cache()?;
+
+        return Ok(());
+    } else if args.cache_path {
+        println!("{}", emojis::cache_dir()?.display());
 
         return Ok(());
     }
