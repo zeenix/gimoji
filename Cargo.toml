@@ -13,7 +13,7 @@ categories = ["development-tools"]
 
 [dependencies]
 clap = { version = "4.3.0", features = ["derive"] }
-crossterm = "0.26.1"
+crossterm = { version = "0.26.1", features = ["use-dev-tty"] }
 dirs = "5.0.1"
 ureq = { version = "2.6.2", default-features = false, features = ["tls"] }
 serde = { version = "1.0.163", features = ["derive"] }
