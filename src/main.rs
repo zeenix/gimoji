@@ -148,6 +148,5 @@ const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
 const HOOK_CONTENT: &str = r#"
 #!/usr/bin/env bash
 # gimoji as a commit hook
-exec < /dev/tty
 gimoji --hook $1 $2
 "#;
