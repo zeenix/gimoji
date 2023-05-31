@@ -96,7 +96,7 @@ fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
 
         terminal.draw(|f| {
             let chunks = Layout::default()
-                .constraints([Constraint::Min(4), Constraint::Percentage(100)].as_ref())
+                .constraints([Constraint::Min(5), Constraint::Percentage(100)].as_ref())
                 .margin(1)
                 .split(f.size());
 
