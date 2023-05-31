@@ -1,7 +1,7 @@
 use ratatui::{
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::{Block, Borders, Padding, Paragraph, Widget},
 };
 
 #[derive(Default)]
@@ -38,7 +38,13 @@ impl Widget for &SearchEntry {
             Block::default()
                 .title(TITLE)
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White)),
+                .border_style(Style::default().fg(Color::White))
+                .padding(Padding {
+                    left: 1,
+                    right: 1,
+                    top: 1,
+                    bottom: 1,
+                }),
         );
 
         paragraph.render(area, buf)

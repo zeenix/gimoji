@@ -2,7 +2,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Row, StatefulWidget, Table, TableState, Widget},
+    widgets::{Block, Borders, Padding, Row, StatefulWidget, Table, TableState, Widget},
 };
 use regex::RegexBuilder;
 
@@ -76,7 +76,13 @@ impl Widget for &mut FilteredView<'_> {
             .block(
                 Block::default()
                     .title("Select an emoji")
-                    .borders(Borders::ALL),
+                    .borders(Borders::ALL)
+                    .padding(Padding {
+                        left: 1,
+                        right: 1,
+                        top: 1,
+                        bottom: 0,
+                    }),
             )
             .style(Style::default().fg(Color::White))
             .highlight_style(
