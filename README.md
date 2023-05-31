@@ -45,8 +45,7 @@ gimoji --update-cache
 [gitmoji-cli] while being a great tool, can be considerably [slow]. Hence this project. `gimoji` has a
 few differences:
 
-* it will launch a full-screen terminal UI to choose an emoji, hence 
-  emojis on the console.
+* it will launch a full-screen terminal UI to choose an emoji, hence emojis on the console.
 * it will only add an emoji to the commit if it's a completely new commit without any existing
   message (e.g it won't kick in when a message is already specified through `-m` option of
   `git commit`, or when ammending a commit).
