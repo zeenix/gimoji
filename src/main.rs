@@ -32,10 +32,6 @@ struct Args {
     /// Run as git commit hook.
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
-
-    /// Print the local emoji cache path (deprecated and NO-OP).
-    #[arg(short, long, default_value_t = false)]
-    cache_path: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -45,7 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         install_hook()?;
 
         return Ok(());
-    } else if args.update_cache || args.cache_path {
+    } else if args.update_cache {
         println!(
             "Emojis are now a part of the gimoji binary. This option is now a NO-OP and kept \
              for backwards compatibility only and will be removed in a future release."
