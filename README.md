@@ -31,15 +31,6 @@ then copy your choice to the system clipboard.
 
 Use `--help` to see all the available options.
 
-## Updating the emoji cache
-
-On the first run, `gimoji` will download the emoji list from [gitmoji] and cache it locally. If you
-want to update the cache, run:
-
-```bash
-gimoji --update-cache
-```
-
 ## Rationale
 
 [gitmoji-cli] while being a great tool, can be considerably [slow]. Hence this project. `gimoji` has a
@@ -51,6 +42,9 @@ few differences:
   `git commit`, or when ammending a commit).
 * it does not add anything other than an emoji (like scope, summary etc.) to the commit message and
   lets you do that in your preferred editor.
+* Unlike [gitmoji-cli] that downloads and caches its emoji database at runtime, `gimoji` uses a
+  pre-compiled database that is included in the binary itself, hence it's much faster to start up
+  and does not need Internet access.
 
 The philosophy here is to enable you to quickly and easily choose an emoji and get out of your way.
 
