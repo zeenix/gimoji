@@ -6,15 +6,15 @@ use ratatui::{
 };
 use regex::RegexBuilder;
 
-use crate::emojis::Emoji;
+use crate::emoji::Emoji;
 
 pub struct SelectionView {
-    emojis: Vec<Emoji>,
+    emojis: &'static [Emoji],
     state: TableState,
 }
 
 impl SelectionView {
-    pub fn new(emojis: Vec<Emoji>) -> Self {
+    pub fn new(emojis: &'static [Emoji]) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
 
