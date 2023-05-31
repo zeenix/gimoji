@@ -1,5 +1,6 @@
+extern crate self as gimoji;
+
 mod emoji;
-mod emojis;
 mod search_entry;
 mod selection_view;
 mod terminal;
@@ -13,7 +14,6 @@ use std::{error::Error, fs::File, io::Write};
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
 
-use emojis::Emojis;
 use search_entry::SearchEntry;
 use terminal::Terminal;
 
@@ -25,7 +25,7 @@ struct Args {
     #[arg(short, long)]
     init: bool,
 
-    /// Update local emoji cache.
+    /// Update local emoji cache (deprecated and NO-OP).
     #[arg(short, long)]
     update_cache: bool,
 
@@ -33,7 +33,7 @@ struct Args {
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
 
-    /// Print the local emoji cache path.
+    /// Print the local emoji cache path (deprecated and NO-OP).
     #[arg(short, long, default_value_t = false)]
     cache_path: bool,
 }
@@ -45,12 +45,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         install_hook()?;
 
         return Ok(());
-    } else if args.update_cache {
-        emojis::update_cache()?;
-
-        return Ok(());
-    } else if args.cache_path {
-        println!("{}", emojis::cache_dir()?.display());
+    } else if args.update_cache || args.cache_path {
+        println!(
+            "Emojis are now a part of the gimoji binary. This option is now a NO-OP and kept \
+             for backwards compatibility only and will be removed in a future release."
+        );
 
         return Ok(());
     }
@@ -85,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
-    let emojis = Emojis::load()?.gitmojis;
+    let emojis = &emoji::EMOJIS;
 
     let mut terminal = Terminal::setup()?;
     let mut search_entry = SearchEntry::default();
