@@ -1,3 +1,4 @@
+mod emoji;
 mod emojis;
 mod search_entry;
 mod selection_view;
