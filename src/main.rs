@@ -72,8 +72,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let prefix = format!("{} ", selected);
         file.write_all(prefix.as_bytes())?;
     } else {
-        Clipboard::new()?.set_text(&selected)?;
-        println!("Copied {} to the clipboard", selected);
+        println!("Copied {selected} to the clipboard");
+        copy_to_clipboard(selected)?;
     }
 
     Ok(())
@@ -138,6 +138,46 @@ fn install_hook() -> Result<(), Box<dyn Error>> {
     file.set_permissions(Permissions::from_mode(0o744))?;
 
     Ok(())
+}
+
+/// Copy the text te the clipboard.
+///
+/// This function exits the process and never returns because on some platforms (X11, Wayland)
+/// clipboard data is only available for as long as the process that "owns" it is alive, in which
+/// case this function will spawn a background task to host the clipboard data.
+///
+/// Note that it is possible to make it work without exiting the process, but it would require an
+/// `unsafe { fork() }`. However, in this programm this is simply not needed.
+fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
+    {
+        use arboard::SetExtLinux;
+        nix::unistd::daemon(false, false)?;
+        Clipboard::new()?.set().wait().text(s)?;
+    }
+
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    )))]
+    {
+        Clipboard::new()?.set().text(s)?;
+    }
+
+    std::process::exit(0)
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
