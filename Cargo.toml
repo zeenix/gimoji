@@ -16,7 +16,10 @@ clap = { version = "4.3.0", features = ["derive"] }
 crossterm = { version = "0.26.1", features = ["use-dev-tty"] }
 ratatui = "0.21.0"
 regex = { version = "1.8.2", default-features = false, features = ["std", "perf", "unicode-case" ] }
-arboard = { version = "3.2.0", default-features = false }
+arboard = { version = "3.2.0", default-features = false, features = ["wayland-data-control"] }
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.26", default-features = false, features = ["process"] }
 
 [build-dependencies]
 serde = { version = "1.0.163", features = ["derive"] }
