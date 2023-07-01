@@ -140,14 +140,14 @@ fn install_hook() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Copy the text te the clipboard.
+/// Copy the text to the clipboard.
 ///
 /// This function exits the process and never returns because on some platforms (X11, Wayland)
 /// clipboard data is only available for as long as the process that "owns" it is alive, in which
 /// case this function will spawn a background task to host the clipboard data.
 ///
 /// Note that it is possible to make it work without exiting the process, but it would require an
-/// `unsafe { fork() }`. However, in this programm this is simply not needed.
+/// `unsafe { fork() }`. However, in this program this is simply not needed.
 fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
     #[cfg(any(
         target_os = "dragonfly",
