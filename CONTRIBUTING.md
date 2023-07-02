@@ -129,4 +129,4 @@ hooks:
 ## Conduct
 
 We follow the [Rust Code of Conduct](https://www.rust-lang.org/conduct.html). For escalation or
-moderation issuesplease contact Zeeshan (zeeshanak@gnome.org) instead of the Rust moderation team.
+moderation issues please contact Zeeshan (zeeshanak@gnome.org) instead of the Rust moderation team.
