@@ -9,6 +9,14 @@ is based on) [gitmoji-cli] but written in Rust.
 
 ## Installation
 
+### Fedora Core (>= 38)
+
+```bash
+sudo dnf install gimoji
+```
+
+### Other OSes
+
 ```bash
 cargo install -f gimoji
 ```
