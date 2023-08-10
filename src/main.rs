@@ -7,7 +7,7 @@ mod terminal;
 
 use arboard::Clipboard;
 use clap::{command, Parser};
-use crossterm::event::{read, Event, KeyCode};
+use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
 use selection_view::SelectionView;
 use std::{error::Error, fs::File, io::Write};
@@ -119,7 +119,13 @@ fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
                 }
                 KeyCode::Down => filtered_view.move_down(),
                 KeyCode::Up => filtered_view.move_up(),
-                KeyCode::Char(c) => search_entry.append(c),
+                KeyCode::Char(c) => {
+                    if c == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
+                        break None;
+                    } else {
+                        search_entry.append(c)
+                    }
+                }
                 KeyCode::Backspace => {
                     search_entry.delete_last();
                 }
