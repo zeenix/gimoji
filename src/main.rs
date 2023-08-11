@@ -1,5 +1,6 @@
 extern crate self as gimoji;
 
+mod colors;
 mod emoji;
 mod search_entry;
 mod selection_view;
@@ -7,6 +8,7 @@ mod terminal;
 
 use arboard::Clipboard;
 use clap::{command, Parser};
+use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
 use selection_view::SelectionView;
@@ -82,9 +84,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
     let emojis = &emoji::EMOJIS;
 
+    let colors = match terminal_light::luma() {
+        Ok(luma) if luma > 0.6 => Colors::light(),
+        _ => Colors::dark(),
+    };
+
     let mut terminal = Terminal::setup()?;
-    let mut search_entry = SearchEntry::default();
-    let mut selection_view = SelectionView::new(emojis);
+    let mut search_entry = SearchEntry::new(&colors);
+    let mut selection_view = SelectionView::new(emojis, &colors);
 
     let selected = loop {
         let search_text = search_entry.text();

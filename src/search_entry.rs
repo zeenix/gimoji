@@ -1,15 +1,23 @@
+use crate::colors::Colors;
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Padding, Paragraph, Widget},
 };
 
-#[derive(Default)]
-pub struct SearchEntry {
+pub struct SearchEntry<'c> {
     text: String,
+    colors: &'c Colors,
 }
 
-impl SearchEntry {
+impl<'c> SearchEntry<'c> {
+    pub fn new(colors: &'c Colors) -> Self {
+        Self {
+            text: String::from(""),
+            colors,
+        }
+    }
+
     pub fn text(&self) -> &str {
         self.text.as_ref()
     }
@@ -27,7 +35,7 @@ impl SearchEntry {
     }
 }
 
-impl Widget for &SearchEntry {
+impl Widget for &SearchEntry<'_> {
     fn render(self, area: ratatui::layout::Rect, buf: &mut ratatui::buffer::Buffer) {
         let (text, style) = if self.text.is_empty() {
             (DEFAULT_TEXT, Style::default().add_modifier(Modifier::DIM))
@@ -38,7 +46,7 @@ impl Widget for &SearchEntry {
             Block::default()
                 .title(TITLE)
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::White))
+                .border_style(Style::default().fg(self.colors.border))
                 .padding(Padding {
                     left: 1,
                     right: 1,
