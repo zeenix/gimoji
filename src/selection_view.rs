@@ -1,27 +1,33 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     widgets::{Block, Borders, Padding, Row, StatefulWidget, Table, TableState, Widget},
 };
 use regex::RegexBuilder;
 
+use crate::colors::Colors;
 use crate::emoji::Emoji;
 
-pub struct SelectionView {
+pub struct SelectionView<'c> {
     emojis: &'static [Emoji],
     state: TableState,
+    colors: &'c Colors,
 }
 
-impl SelectionView {
-    pub fn new(emojis: &'static [Emoji]) -> Self {
+impl<'c> SelectionView<'c> {
+    pub fn new(emojis: &'static [Emoji], colors: &'c Colors) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
 
-        Self { emojis, state }
+        Self {
+            emojis,
+            state,
+            colors,
+        }
     }
 
-    pub fn filtered_view(&mut self, search_text: &str) -> FilteredView<'_> {
+    pub fn filtered_view(&mut self, search_text: &str) -> FilteredView<'_, '_> {
         let pattern = RegexBuilder::new(search_text)
             .case_insensitive(true)
             .build()
@@ -39,16 +45,18 @@ impl SelectionView {
         FilteredView {
             emojis,
             state: &mut self.state,
+            colors: self.colors,
         }
     }
 }
 
-pub struct FilteredView<'s> {
+pub struct FilteredView<'s, 'c> {
     emojis: Vec<&'s Emoji>,
     state: &'s mut TableState,
+    colors: &'c Colors,
 }
 
-impl FilteredView<'_> {
+impl FilteredView<'_, '_> {
     pub fn selected(&self) -> Option<&Emoji> {
         self.emojis.get(self.state.selected().unwrap()).copied()
     }
@@ -66,7 +74,7 @@ impl FilteredView<'_> {
     }
 }
 
-impl Widget for &mut FilteredView<'_> {
+impl Widget for &mut FilteredView<'_, '_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let emojis = self
             .emojis
@@ -84,11 +92,11 @@ impl Widget for &mut FilteredView<'_> {
                         bottom: 0,
                     }),
             )
-            .style(Style::default().fg(Color::White))
+            .style(Style::default().fg(self.colors.unselected))
             .highlight_style(
                 Style::default()
                     .add_modifier(Modifier::BOLD)
-                    .fg(Color::Green),
+                    .fg(self.colors.selected),
             )
             .highlight_symbol("❯ ")
             .widths(&[
