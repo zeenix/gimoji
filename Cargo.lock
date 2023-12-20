@@ -235,25 +235,24 @@ dependencies = [
 
 [[package]]
 name = "databake"
-version = "0.1.5"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "142b0851e71c009e7f5582a8fa13de2cb133643026a57c7e4ae1b8c4369948e9"
+checksum = "82175d72e69414ceafbe2b49686794d3a8bed846e0d50267355f83ea8fdd953a"
 dependencies = [
  "databake-derive",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
 name = "databake-derive"
-version = "0.1.5"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdbf8a83d97ace23f6e0f07dcb4f777ac575cab5d6f56c413129b047abac5d5d"
+checksum = "377af281d8f23663862a7c84623bc5dcf7f8c44b13c7496a590bdc157f941a43"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.22",
  "synstructure",
 ]
 
@@ -846,13 +845,13 @@ dependencies = [
 
 [[package]]
 name = "synstructure"
-version = "0.12.6"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f36bdaa60a83aca3921b5259d5400cbf5e90fc51931376a9bd4a0eb79aa7210f"
+checksum = "285ba80e733fac80aa4270fbcdf83772a79b80aa35c97075320abfee4a915b06"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.22",
  "unicode-xid",
 ]
 
