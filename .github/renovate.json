@@ -2,7 +2,12 @@
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
-      "commitMessageTopic": "⬆️  Bump {{depName}}"
+      "commitMessagePrefix": "⬆️  actions"
+    },
+    {
+      "matchManagers": ["cargo"],
+      "commitMessagePrefix": "⬆️  cargo",
+      "lockFileMaintenance": { "enabled": true }
     }
   ]
 }
