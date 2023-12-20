@@ -22,7 +22,8 @@ jobs:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Check build
-        run: cargo check
+        # Ensure we didn't forget to push the `Cargo.lock` changes using `--locked`.
+        run: cargo --locked check
 
   lint:
     runs-on: ubuntu-latest
