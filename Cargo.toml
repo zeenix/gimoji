@@ -20,7 +20,7 @@ arboard = { version = "3.3.0", default-features = false, features = ["wayland-da
 terminal-light = "1.1.1"
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.26", default-features = false, features = ["process"] }
+nix = { version = "0.27", default-features = false, features = ["process"] }
 
 [build-dependencies]
 serde = { version = "1.0.193", features = ["derive"] }
