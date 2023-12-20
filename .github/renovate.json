@@ -1,3 +1,8 @@
 {
-  "commitMessageTopic": "⬆️  Bump {{depName}}"
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "commitMessageTopic": "⬆️  Bump {{depName}}"
+    }
+  ]
 }
