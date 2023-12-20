@@ -80,31 +80,33 @@ impl Widget for &mut FilteredView<'_, '_> {
             .emojis
             .iter()
             .map(|emoji| Row::new(vec![emoji.emoji(), emoji.code(), emoji.description()]));
-        let table = Table::new(emojis)
-            .block(
-                Block::default()
-                    .title("Select an emoji")
-                    .borders(Borders::ALL)
-                    .padding(Padding {
-                        left: 1,
-                        right: 1,
-                        top: 1,
-                        bottom: 0,
-                    }),
-            )
-            .style(Style::default().fg(self.colors.unselected))
-            .highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(self.colors.selected),
-            )
-            .highlight_symbol("❯ ")
-            .widths(&[
+        let table = Table::new(
+            emojis,
+            [
                 Constraint::Percentage(3),
                 Constraint::Percentage(12),
                 Constraint::Percentage(85),
-            ])
-            .column_spacing(2);
+            ],
+        )
+        .block(
+            Block::default()
+                .title("Select an emoji")
+                .borders(Borders::ALL)
+                .padding(Padding {
+                    left: 1,
+                    right: 1,
+                    top: 1,
+                    bottom: 0,
+                }),
+        )
+        .style(Style::default().fg(self.colors.unselected))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(self.colors.selected),
+        )
+        .highlight_symbol("❯ ")
+        .column_spacing(2);
         StatefulWidget::render(table, area, buf, self.state);
     }
 }
