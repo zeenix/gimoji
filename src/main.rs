@@ -12,7 +12,11 @@ use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
 use selection_view::SelectionView;
-use std::{error::Error, fs::File, io::Write};
+use std::{
+    error::Error,
+    fs::File,
+    io::{Read, Write},
+};
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
 
@@ -52,15 +56,28 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let commit_file_path = if !args.hook.is_empty() {
-        if args.hook.len() > 1 {
-            // For now, we only modify a completely new commit.
-            return Ok(());
-        }
+    let (commit_file_path, commit_file_content) = if !args.hook.is_empty() {
+        let path = &args.hook[0];
+        let mut file = File::open(path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+        let content = if !content.is_empty() {
+            // FIXME: There has to be a faster way to detect an emoji.
+            for emoji in emoji::EMOJIS {
+                if content.starts_with(emoji.emoji()) {
+                    // The file already contains an emoji.
+                    return Ok(());
+                }
+            }
 
-        Some(&args.hook[0])
+            Some(content)
+        } else {
+            None
+        };
+
+        (Some(path), content)
     } else {
-        None
+        (None, None)
     };
 
     let selected = match select_emoji()? {
@@ -69,10 +86,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     if let Some(path) = commit_file_path {
-        // Just write the emoji to the file.
+        // Just prepend the emoji to the file.
         let mut file = File::create(path)?;
         let prefix = format!("{} ", selected);
         file.write_all(prefix.as_bytes())?;
+        if let Some(content) = commit_file_content {
+            file.write_all(content.as_bytes())?;
+        }
     } else {
         println!("Copied {selected} to the clipboard");
         copy_to_clipboard(selected)?;

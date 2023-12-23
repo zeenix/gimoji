@@ -44,9 +44,8 @@ Use `--help` to see all the available options.
 few differences:
 
 * it will launch a full-screen terminal UI to choose an emoji, hence emojis on the console.
-* it will only add an emoji to the commit if it's a completely new commit without any existing
-  message (e.g it won't kick in when a message is already specified through `-m` option of
-  `git commit`, or when amending a commit).
+* it will only add an emoji prefix to the commit if one is not already present in the commit
+  message (e.g when using  `-m` option of `git commit`, or when amending a commit).
 * it does not add anything other than an emoji (like scope, summary etc.) to the commit message and
   lets you do that in your preferred editor.
 * Unlike [gitmoji-cli] that downloads and caches its emoji database at runtime, `gimoji` uses a
