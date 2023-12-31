@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let content = if !content.is_empty() {
             // FIXME: There has to be a faster way to detect an emoji.
             for emoji in emoji::EMOJIS {
-                if content.starts_with(emoji.emoji()) {
+                if content.starts_with(emoji.emoji()) || content.starts_with(emoji.code()) {
                     // The file already contains an emoji.
                     return Ok(());
                 }
