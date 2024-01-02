@@ -15,7 +15,7 @@ use selection_view::SelectionView;
 use std::{
     error::Error,
     fs::File,
-    io::{Read, Write},
+    io::{BufRead, BufReader, Write},
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -58,14 +58,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let (commit_file_path, commit_file_content) = if !args.hook.is_empty() {
         let path = &args.hook[0];
-        let mut file = File::open(path)?;
+        let file = File::open(path)?;
+        let mut reader = BufReader::new(file);
         let mut content = String::new();
-        file.read_to_string(&mut content)?;
+        reader.read_line(&mut content)?;
         let content = if !content.is_empty() {
             // FIXME: There has to be a faster way to detect an emoji.
             for emoji in emoji::EMOJIS {
-                if content.starts_with(emoji.emoji()) || content.starts_with(emoji.code()) {
-                    // The file already contains an emoji.
+                if content.contains(emoji.emoji()) || content.contains(emoji.code()) {
+                    // The commit shortlog already contains an emoji.
                     return Ok(());
                 }
             }
