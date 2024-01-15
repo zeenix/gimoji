@@ -23,7 +23,7 @@ regex = { version = "1.10.2", default-features = false, features = [
 arboard = { version = "3.3.0", default-features = false, features = [
     "wayland-data-control",
 ] }
-terminal-light = "1.1.1"
+terminal-light = "1.2.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.27", default-features = false, features = ["process"] }
