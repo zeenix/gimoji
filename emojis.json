@@ -584,6 +584,14 @@
       "description": "Add or update code related to validation.",
       "name": "safety-vest",
       "semver": null
+    },
+    {
+      "emoji": "🔌",
+      "entity": "&#x1F50C;",
+      "code": ":electric_plug:",
+      "description": "Add or update code related to connectivity.",
+      "name": "electric-plug",
+      "semver": null
     }
   ]
 }
