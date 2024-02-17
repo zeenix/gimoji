@@ -16,6 +16,7 @@ use std::{
     error::Error,
     fs::File,
     io::{BufRead, BufReader, Write},
+    process,
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -149,7 +150,8 @@ fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
                 KeyCode::Up => filtered_view.move_up(),
                 KeyCode::Char(c) => {
                     if c == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
-                        break None;
+                        let _ = terminal.cleanup();
+                        process::exit(130);
                     } else {
                         search_entry.append(c)
                     }
