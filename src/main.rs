@@ -16,7 +16,6 @@ use std::{
     error::Error,
     fs::File,
     io::{BufRead, BufReader, Write},
-    process,
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -84,7 +83,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let selected = match select_emoji()? {
         Some(s) => s,
-        None => process::exit(130),
+        None => return Ok(()),
     };
 
     if let Some(path) = commit_file_path {
