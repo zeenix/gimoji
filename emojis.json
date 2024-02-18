@@ -592,6 +592,14 @@
       "description": "Add or update code related to connectivity.",
       "name": "electric-plug",
       "semver": null
+    },
+    {
+      "emoji": "🤖",
+      "entity": "&#x1F916;",
+      "code": ":robot:",
+      "description": "Changes related to automation/bots.",
+      "name": "robot",
+      "semver": null
     }
   ]
 }
