@@ -30,5 +30,5 @@ nix = { version = "0.27", default-features = false, features = ["process"] }
 
 [build-dependencies]
 serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.113"
+serde_json = "1.0.114"
 databake = { version = "0.1.7", features = ["derive"] }
