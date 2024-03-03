@@ -62,9 +62,10 @@ impl From<ColorScheme> for Colors {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+    let color_scheme = get_color_scheme(&args);
 
     if args.init {
-        install_hook()?;
+        install_hook(color_scheme)?;
 
         return Ok(());
     } else if args.update_cache {
@@ -101,7 +102,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None)
     };
 
-    let color_scheme = get_color_scheme(&args);
     let selected = match select_emoji(color_scheme.into())? {
         Some(s) => s,
         None => return Ok(()),
@@ -182,9 +182,14 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
     Ok(selected)
 }
 
-fn install_hook() -> Result<(), Box<dyn Error>> {
+fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(HOOK_PATH)?;
-    file.write_all(HOOK_CONTENT.as_bytes())?;
+    let color_scheme_arg = match color_scheme {
+        ColorScheme::Light => "--color-scheme light",
+        ColorScheme::Dark => "--color-scheme dark",
+    };
+    let content = HOOK_CONTENT_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+    file.write_all(content.as_bytes())?;
     #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
@@ -248,9 +253,9 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
-const HOOK_CONTENT: &str = r#"
+const HOOK_CONTENT_TEMPL: &str = r#"
 #!/usr/bin/env bash
 # gimoji as a commit hook
 exec < /dev/tty
-gimoji --hook $1 $2
+gimoji {color_scheme_arg} --hook $1 $2
 "#;
