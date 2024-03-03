@@ -32,10 +32,6 @@ struct Args {
     #[arg(short, long)]
     init: bool,
 
-    /// Update local emoji cache (deprecated and NO-OP).
-    #[arg(short, long)]
-    update_cache: bool,
-
     /// Run as git commit hook.
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
@@ -66,13 +62,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if args.init {
         install_hook(color_scheme)?;
-
-        return Ok(());
-    } else if args.update_cache {
-        println!(
-            "Emojis are now a part of the gimoji binary. This option is now a NO-OP and kept \
-             for backwards compatibility only and will be removed in a future release."
-        );
 
         return Ok(());
     }
