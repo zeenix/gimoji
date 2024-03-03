@@ -16,7 +16,7 @@ use std::{
     error::Error,
     fs::File,
     io::{BufRead, BufReader, Write},
-    process,
+    process::{self, exit},
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -246,9 +246,17 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
             _ => None,
         })
         .or(args.color_scheme)
-        .unwrap_or_else(|| match terminal_light::luma() {
-            Ok(luma) if luma > 0.6 => ColorScheme::Light,
-            _ => ColorScheme::Dark,
+        .unwrap_or_else(|| {
+            if args.hook.is_empty() {
+                match terminal_light::luma() {
+                    Ok(luma) if luma > 0.6 => ColorScheme::Light,
+                    _ => ColorScheme::Dark,
+                }
+            } else {
+                eprintln!("{}", NO_SCHEME_IN_HOOK_ERROR);
+
+                exit(-1);
+            }
         })
 }
 
@@ -259,3 +267,6 @@ const HOOK_CONTENT_TEMPL: &str = r#"
 exec < /dev/tty
 gimoji {color_scheme_arg} --hook $1 $2
 "#;
+
+const NO_SCHEME_IN_HOOK_ERROR: &str =
+    r#"No color scheme specified in the git hook. Please re-install it using `gimoji -i`."#;
