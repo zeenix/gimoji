@@ -7,7 +7,7 @@ mod selection_view;
 mod terminal;
 
 use arboard::Clipboard;
-use clap::{command, Parser};
+use clap::{command, Parser, ValueEnum};
 use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
@@ -16,7 +16,7 @@ use std::{
     error::Error,
     fs::File,
     io::{BufRead, BufReader, Write},
-    process,
+    process::{self, exit},
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -39,13 +39,33 @@ struct Args {
     /// Run as git commit hook.
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
+
+    /// The color scheme to use (`GIMOJI_COLOR_SCHEME` environment variable takes precedence).
+    #[arg(short, long)]
+    color_scheme: Option<ColorScheme>,
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy)]
+enum ColorScheme {
+    Light,
+    Dark,
+}
+
+impl From<ColorScheme> for Colors {
+    fn from(c: ColorScheme) -> Self {
+        match c {
+            ColorScheme::Dark => Colors::dark(),
+            ColorScheme::Light => Colors::light(),
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+    let color_scheme = get_color_scheme(&args);
 
     if args.init {
-        install_hook()?;
+        install_hook(color_scheme)?;
 
         return Ok(());
     } else if args.update_cache {
@@ -82,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None)
     };
 
-    let selected = match select_emoji()? {
+    let selected = match select_emoji(color_scheme.into())? {
         Some(s) => s,
         None => return Ok(()),
     };
@@ -103,13 +123,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
+fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
     let emojis = &emoji::EMOJIS;
-
-    let colors = match terminal_light::luma() {
-        Ok(luma) if luma > 0.6 => Colors::light(),
-        _ => Colors::dark(),
-    };
 
     let mut terminal = Terminal::setup()?;
     let mut search_entry = SearchEntry::new(&colors);
@@ -167,9 +182,14 @@ fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
     Ok(selected)
 }
 
-fn install_hook() -> Result<(), Box<dyn Error>> {
+fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(HOOK_PATH)?;
-    file.write_all(HOOK_CONTENT.as_bytes())?;
+    let color_scheme_arg = match color_scheme {
+        ColorScheme::Light => "--color-scheme light",
+        ColorScheme::Dark => "--color-scheme dark",
+    };
+    let content = HOOK_CONTENT_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+    file.write_all(content.as_bytes())?;
     #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
@@ -216,10 +236,36 @@ fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
     std::process::exit(0)
 }
 
+// Color scheme selection. Precedence: env, arg, detection, default.
+fn get_color_scheme(args: &Args) -> ColorScheme {
+    std::env::var("GIMOJI_COLOR_SCHEME")
+        .ok()
+        .and_then(|s| match s.as_str() {
+            "light" => Some(ColorScheme::Light),
+            "dark" => Some(ColorScheme::Dark),
+            _ => None,
+        })
+        .or(args.color_scheme)
+        .unwrap_or_else(|| {
+            if args.hook.is_empty() {
+                match terminal_light::luma() {
+                    Ok(luma) if luma > 0.6 => ColorScheme::Light,
+                    _ => ColorScheme::Dark,
+                }
+            } else {
+                eprintln!("{}", NO_SCHEME_IN_HOOK_ERROR);
+
+                exit(-1);
+            }
+        })
+}
+
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
-const HOOK_CONTENT: &str = r#"
+const HOOK_CONTENT_TEMPL: &str = r#"
 #!/usr/bin/env bash
 # gimoji as a commit hook
-exec < /dev/tty
-gimoji --hook $1 $2
+gimoji {color_scheme_arg} --hook $1 $2
 "#;
+
+const NO_SCHEME_IN_HOOK_ERROR: &str =
+    r#"No color scheme specified in the git hook. Please re-install it using `gimoji -i`."#;
