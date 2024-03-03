@@ -15,7 +15,7 @@ use selection_view::SelectionView;
 use std::{
     error::Error,
     fs::File,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
     process::{self, exit},
 };
 #[cfg(unix)]
@@ -92,6 +92,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
+            // Load the rest of the file.
+            reader.read_to_string(&mut content)?;
             Some(content)
         } else {
             None
