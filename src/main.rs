@@ -7,7 +7,7 @@ mod selection_view;
 mod terminal;
 
 use arboard::Clipboard;
-use clap::{command, Parser};
+use clap::{command, Parser, ValueEnum};
 use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
@@ -39,6 +39,25 @@ struct Args {
     /// Run as git commit hook.
     #[arg(long, value_delimiter = ' ', num_args = 1..3)]
     hook: Vec<String>,
+
+    /// The color scheme to use (`GIMOJI_COLOR_SCHEME` environment variable takes precedence).
+    #[arg(short, long)]
+    color_scheme: Option<ColorScheme>,
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy)]
+enum ColorScheme {
+    Light,
+    Dark,
+}
+
+impl From<ColorScheme> for Colors {
+    fn from(c: ColorScheme) -> Self {
+        match c {
+            ColorScheme::Dark => Colors::dark(),
+            ColorScheme::Light => Colors::light(),
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -82,7 +101,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None)
     };
 
-    let selected = match select_emoji()? {
+    let color_scheme = get_color_scheme(&args);
+    let selected = match select_emoji(color_scheme.into())? {
         Some(s) => s,
         None => return Ok(()),
     };
@@ -103,13 +123,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn select_emoji() -> Result<Option<String>, Box<dyn Error>> {
+fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
     let emojis = &emoji::EMOJIS;
-
-    let colors = match terminal_light::luma() {
-        Ok(luma) if luma > 0.6 => Colors::light(),
-        _ => Colors::dark(),
-    };
 
     let mut terminal = Terminal::setup()?;
     let mut search_entry = SearchEntry::new(&colors);
@@ -214,6 +229,22 @@ fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
     }
 
     std::process::exit(0)
+}
+
+// Color scheme selection. Precedence: env, arg, detection, default.
+fn get_color_scheme(args: &Args) -> ColorScheme {
+    std::env::var("GIMOJI_COLOR_SCHEME")
+        .ok()
+        .and_then(|s| match s.as_str() {
+            "light" => Some(ColorScheme::Light),
+            "dark" => Some(ColorScheme::Dark),
+            _ => None,
+        })
+        .or(args.color_scheme)
+        .unwrap_or_else(|| match terminal_light::luma() {
+            Ok(luma) if luma > 0.6 => ColorScheme::Light,
+            _ => ColorScheme::Dark,
+        })
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
