@@ -268,10 +268,8 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
-const HOOK_HEADER: &str = r#"#!/usr/bin/env bash
-# gimoji as a commit hook
-"#;
-const HOOK_CMD_TEMPL: &str = "gimoji {color_scheme_arg} --hook $1 $2";
+const HOOK_HEADER: &str = "#!/usr/bin/env bash\n# gimoji as a commit hook\n";
+const HOOK_CMD_TEMPL: &str = "gimoji {color_scheme_arg} --hook \"$1\" \"$2\"";
 
 const NO_SCHEME_IN_HOOK_ERROR: &str =
     r#"No color scheme specified in the git hook. Please re-install it using `gimoji -i`."#;
