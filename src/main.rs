@@ -16,7 +16,7 @@ use std::{
     error::Error,
     fs::{File, OpenOptions},
     io::{BufRead, BufReader, Read, Write},
-    process::{self, exit},
+    process::exit,
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -157,7 +157,7 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
                 KeyCode::Char(c) => {
                     if c == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
                         let _ = terminal.cleanup();
-                        process::exit(130);
+                        exit(130);
                     } else {
                         search_entry.append(c)
                     }
@@ -235,7 +235,7 @@ fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
         Clipboard::new()?.set().text(s)?;
     }
 
-    std::process::exit(0)
+    exit(0)
 }
 
 // Color scheme selection. Precedence: env, arg, detection, default.
