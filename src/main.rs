@@ -188,8 +188,8 @@ fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
             eprintln!(
                 "Failed to create `{HOOK_PATH}` as it already exists. \
-                Please either or remove it and re-run `gimoji -i` or \
-                add the following commandline to it:\n{content}",
+                Please either remove it and re-run `gimoji -i`, or \
+                add the following command line to it:\n{content}",
             );
             exit(-1);
         }
