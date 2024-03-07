@@ -14,7 +14,7 @@ use ratatui::layout::{Constraint, Layout};
 use selection_view::SelectionView;
 use std::{
     error::Error,
-    fs::File,
+    fs::{File, OpenOptions},
     io::{BufRead, BufReader, Read, Write},
     process::{self, exit},
 };
@@ -174,12 +174,28 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
 }
 
 fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
-    let mut file = File::create(HOOK_PATH)?;
     let color_scheme_arg = match color_scheme {
         ColorScheme::Light => "--color-scheme light",
         ColorScheme::Dark => "--color-scheme dark",
     };
-    let content = HOOK_CONTENT_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+    let content = HOOK_CMD_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+    let mut file = match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(HOOK_PATH)
+    {
+        Ok(f) => f,
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            eprintln!(
+                "Failed to create `{HOOK_PATH}` as it already exists. \
+                Please either or remove it and re-run `gimoji -i` or \
+                add the following commandline to it:\n{content}",
+            );
+            exit(-1);
+        }
+        Err(e) => return Err(e.into()),
+    };
+    file.write_all(HOOK_HEADER.as_bytes())?;
     file.write_all(content.as_bytes())?;
     #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
@@ -252,11 +268,8 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
-const HOOK_CONTENT_TEMPL: &str = r#"
-#!/usr/bin/env bash
-# gimoji as a commit hook
-gimoji {color_scheme_arg} --hook $1 $2
-"#;
+const HOOK_HEADER: &str = "#!/usr/bin/env bash\n# gimoji as a commit hook\n";
+const HOOK_CMD_TEMPL: &str = "gimoji {color_scheme_arg} --hook \"$1\" \"$2\"";
 
 const NO_SCHEME_IN_HOOK_ERROR: &str =
     r#"No color scheme specified in the git hook. Please re-install it using `gimoji -i`."#;
