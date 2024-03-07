@@ -58,10 +58,9 @@ impl From<ColorScheme> for Colors {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    let color_scheme = get_color_scheme(&args);
 
     if args.init {
-        install_hook(color_scheme)?;
+        install_hook()?;
 
         return Ok(());
     }
@@ -93,6 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None)
     };
 
+    let color_scheme = get_color_scheme(&args);
     let selected = match select_emoji(color_scheme.into())? {
         Some(s) => s,
         None => return Ok(()),
@@ -173,12 +173,7 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
     Ok(selected)
 }
 
-fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
-    let color_scheme_arg = match color_scheme {
-        ColorScheme::Light => "--color-scheme light",
-        ColorScheme::Dark => "--color-scheme dark",
-    };
-    let content = HOOK_CMD_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+fn install_hook() -> Result<(), Box<dyn Error>> {
     let mut file = match OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -189,14 +184,14 @@ fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
             eprintln!(
                 "Failed to create `{HOOK_PATH}` as it already exists. \
                 Please either remove it and re-run `gimoji -i`, or \
-                add the following command line to it:\n{content}",
+                add the following command line to it:\n{HOOK_CMD}",
             );
             exit(-1);
         }
         Err(e) => return Err(e.into()),
     };
     file.write_all(HOOK_HEADER.as_bytes())?;
-    file.write_all(content.as_bytes())?;
+    file.write_all(HOOK_CMD.as_bytes())?;
     #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
@@ -261,4 +256,4 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
 const HOOK_HEADER: &str = "#!/usr/bin/env bash\n# gimoji as a commit hook\n";
-const HOOK_CMD_TEMPL: &str = "gimoji {color_scheme_arg} --hook \"$1\" \"$2\"";
+const HOOK_CMD: &str = "gimoji --hook \"$1\" \"$2\"";
