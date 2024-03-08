@@ -23,8 +23,8 @@ cargo install -f gimoji
 
 ## Usage
 
-`gimoji` is primarily intended to be used as a git commit hook. Once installed, ask `gimoji` to
-install the hook in your repository:
+`gimoji` is primarily intended to be used as a git `prepare-commit-msg` hook. Once installed, ask
+`gimoji` to install the hook in your repository:
 
 ```bash
 cd /path/to/your/project/

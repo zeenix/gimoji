@@ -28,7 +28,7 @@ use terminal::Terminal;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Initialize gimoji as a commit message hook.
+    /// Initialize gimoji as a commit message (`prepare-commit-msg`) hook.
     #[arg(short, long)]
     init: bool,
 
