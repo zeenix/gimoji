@@ -248,9 +248,20 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
             _ => None,
         })
         .or(args.color_scheme)
-        .unwrap_or_else(|| match terminal_light::luma() {
-            Ok(luma) if luma > 0.6 => ColorScheme::Light,
-            _ => ColorScheme::Dark,
+        .unwrap_or_else(|| {
+            terminal_light::luma()
+                .map(|l| {
+                    if l > 0.6 {
+                        ColorScheme::Light
+                    } else {
+                        ColorScheme::Dark
+                    }
+                })
+                .unwrap_or_else(|e| {
+                    eprintln!("WARNING: Failed to detect terminal luma: {e}. Assuming dark.");
+
+                    ColorScheme::Dark
+                })
         })
 }
 
