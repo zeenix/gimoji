@@ -37,6 +37,8 @@ struct Args {
     hook: Vec<String>,
 
     /// The color scheme to use (`GIMOJI_COLOR_SCHEME` environment variable takes precedence).
+    ///
+    /// If not specified, the color scheme is autodetected.
     #[arg(short, long)]
     color_scheme: Option<ColorScheme>,
 }
