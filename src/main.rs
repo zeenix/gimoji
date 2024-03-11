@@ -16,7 +16,7 @@ use std::{
     error::Error,
     fs::{File, OpenOptions},
     io::{BufRead, BufReader, Read, Write},
-    process::{self, exit},
+    process::exit,
 };
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
@@ -37,6 +37,8 @@ struct Args {
     hook: Vec<String>,
 
     /// The color scheme to use (`GIMOJI_COLOR_SCHEME` environment variable takes precedence).
+    ///
+    /// If not specified, the color scheme is autodetected.
     #[arg(short, long)]
     color_scheme: Option<ColorScheme>,
 }
@@ -58,10 +60,9 @@ impl From<ColorScheme> for Colors {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    let color_scheme = get_color_scheme(&args);
 
     if args.init {
-        install_hook(color_scheme)?;
+        install_hook()?;
 
         return Ok(());
     }
@@ -93,6 +94,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None)
     };
 
+    let color_scheme = get_color_scheme(&args);
     let selected = match select_emoji(color_scheme.into())? {
         Some(s) => s,
         None => return Ok(()),
@@ -157,7 +159,7 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
                 KeyCode::Char(c) => {
                     if c == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
                         let _ = terminal.cleanup();
-                        process::exit(130);
+                        exit(130);
                     } else {
                         search_entry.append(c)
                     }
@@ -173,12 +175,7 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
     Ok(selected)
 }
 
-fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
-    let color_scheme_arg = match color_scheme {
-        ColorScheme::Light => "--color-scheme light",
-        ColorScheme::Dark => "--color-scheme dark",
-    };
-    let content = HOOK_CMD_TEMPL.replace("{color_scheme_arg}", color_scheme_arg);
+fn install_hook() -> Result<(), Box<dyn Error>> {
     let mut file = match OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -189,14 +186,14 @@ fn install_hook(color_scheme: ColorScheme) -> Result<(), Box<dyn Error>> {
             eprintln!(
                 "Failed to create `{HOOK_PATH}` as it already exists. \
                 Please either remove it and re-run `gimoji -i`, or \
-                add the following command line to it:\n{content}",
+                add the following command line to it:\n{HOOK_CMD}",
             );
             exit(-1);
         }
         Err(e) => return Err(e.into()),
     };
     file.write_all(HOOK_HEADER.as_bytes())?;
-    file.write_all(content.as_bytes())?;
+    file.write_all(HOOK_CMD.as_bytes())?;
     #[cfg(unix)]
     file.set_permissions(Permissions::from_mode(0o744))?;
 
@@ -240,7 +237,7 @@ fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
         Clipboard::new()?.set().text(s)?;
     }
 
-    std::process::exit(0)
+    exit(0)
 }
 
 // Color scheme selection. Precedence: env, arg, detection, default.
@@ -254,22 +251,22 @@ fn get_color_scheme(args: &Args) -> ColorScheme {
         })
         .or(args.color_scheme)
         .unwrap_or_else(|| {
-            if args.hook.is_empty() {
-                match terminal_light::luma() {
-                    Ok(luma) if luma > 0.6 => ColorScheme::Light,
-                    _ => ColorScheme::Dark,
-                }
-            } else {
-                eprintln!("{}", NO_SCHEME_IN_HOOK_ERROR);
+            terminal_light::luma()
+                .map(|l| {
+                    if l > 0.6 {
+                        ColorScheme::Light
+                    } else {
+                        ColorScheme::Dark
+                    }
+                })
+                .unwrap_or_else(|e| {
+                    eprintln!("WARNING: Failed to detect terminal luma: {e}. Assuming dark.");
 
-                exit(-1);
-            }
+                    ColorScheme::Dark
+                })
         })
 }
 
 const HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
 const HOOK_HEADER: &str = "#!/usr/bin/env bash\n# gimoji as a commit hook\n";
-const HOOK_CMD_TEMPL: &str = "gimoji {color_scheme_arg} --hook \"$1\" \"$2\"";
-
-const NO_SCHEME_IN_HOOK_ERROR: &str =
-    r#"No color scheme specified in the git hook. Please re-install it using `gimoji -i`."#;
+const HOOK_CMD: &str = "gimoji --hook \"$1\" \"$2\"";
