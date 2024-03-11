@@ -600,6 +600,14 @@
       "description": "Changes related to automation/bots.",
       "name": "robot",
       "semver": null
+    },
+    {
+      "emoji": "💣",
+      "entity": "&#x1F4A3;",
+      "code": ":bomb:",
+      "description": "Fix a crash.",
+      "name": "bomb",
+      "semver": null
     }
   ]
 }
