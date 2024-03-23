@@ -15,7 +15,7 @@ categories = ["development-tools"]
 clap = { version = "4.5.3", features = ["derive"] }
 crossterm = { version = "0.27.0", features = ["use-dev-tty"] }
 ratatui = "0.26.1"
-regex = { version = "1.10.3", default-features = false, features = [
+regex = { version = "1.10.4", default-features = false, features = [
     "std",
     "perf",
     "unicode-case",
