@@ -20,7 +20,7 @@ regex = { version = "1.10.4", default-features = false, features = [
     "perf",
     "unicode-case",
 ] }
-arboard = { version = "3.3.2", default-features = false, features = [
+arboard = { version = "3.4.0", default-features = false, features = [
     "wayland-data-control",
 ] }
 terminal-light = "1.4.0"
