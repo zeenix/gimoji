@@ -131,7 +131,7 @@ fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
             let chunks = Layout::default()
                 .constraints([Constraint::Min(5), Constraint::Percentage(100)].as_ref())
                 .margin(1)
-                .split(f.size());
+                .split(f.area());
 
             // The search entry goes at the top.
             f.render_widget(&search_entry, chunks[0]);
