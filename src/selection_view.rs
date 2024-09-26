@@ -37,16 +37,25 @@ impl<'c> SelectionView<'c> {
             .iter()
             .filter(|emoji| search_text.is_empty() || emoji.contains(&pattern))
             .collect();
-        if self.state.selected().unwrap() >= emojis.len() {
-            // Reset the selection if the list goes shorter than the selected index.
-            self.state.select(Some(0));
-        }
+
+        self.state
+            .select(adjust_selected(self.state.selected(), emojis.len()));
 
         FilteredView {
             emojis,
             state: &mut self.state,
             colors: self.colors,
         }
+    }
+}
+
+fn adjust_selected(selected: Option<usize>, list_len: usize) -> Option<usize> {
+    match (selected, list_len) {
+        (_, 0) => None,
+        (None, _) => Some(0),
+        // Reset the selection if the list goes shorter than the selected index.
+        (Some(selected), _) if selected >= list_len => Some(0),
+        (Some(_), _) => selected,
     }
 }
 
