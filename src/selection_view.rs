@@ -28,7 +28,7 @@ impl<'c> SelectionView<'c> {
     }
 
     pub fn filtered_view(&mut self, search_text: &str) -> FilteredView<'_, '_> {
-        let pattern = RegexBuilder::new(search_text)
+        let pattern = RegexBuilder::new(&regex::escape(search_text))
             .case_insensitive(true)
             .build()
             .expect("invalid characters in search text");
