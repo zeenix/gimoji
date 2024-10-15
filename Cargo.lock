@@ -987,9 +987,9 @@ dependencies = [
 
 [[package]]
 name = "terminal-light"
-version = "1.5.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "107b76de0f9296a417d77a85fee9e0d57084392d281b0858116b14e6620f255c"
+checksum = "4a9474484d1a0c031cd7d065c6f027a376859c9fedb32c94df3d7a797218bbb7"
 dependencies = [
  "coolor",
  "crossterm",
@@ -1351,9 +1351,9 @@ checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
 
 [[package]]
 name = "xterm-query"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad8964f04823efe0096d7829f6d93f9cb4f88713d07d514486296dd8b9d2194"
+checksum = "775333f1c03ec9f81f7f295de5a8dac7350b91f7e03e2dd730593ba4ec3515d1"
 dependencies = [
  "nix 0.29.0",
  "thiserror",
