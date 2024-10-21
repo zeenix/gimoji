@@ -14,7 +14,7 @@ categories = ["development-tools"]
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 crossterm = { version = "0.28.0", features = ["use-dev-tty"] }
-ratatui = "0.28.0"
+ratatui = "0.29.0"
 regex = { version = "1.10.4", default-features = false, features = [
     "std",
     "perf",

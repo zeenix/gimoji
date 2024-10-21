@@ -109,7 +109,7 @@ impl Widget for &mut FilteredView<'_, '_> {
                 }),
         )
         .style(Style::default().fg(self.colors.unselected))
-        .highlight_style(
+        .row_highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
                 .fg(self.colors.selected),
