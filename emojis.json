@@ -608,6 +608,14 @@
       "description": "Fix a crash.",
       "name": "bomb",
       "semver": null
+    },
+    {
+      "emoji": "🐰",
+      "entity": "&#x1F430;",
+      "code": ":rabbit:",
+      "description": "Changes related to fuzzing.",
+      "name": "rabbit",
+      "semver": null
     }
   ]
 }
