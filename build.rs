@@ -29,9 +29,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path = PathBuf::from(EMOJI_FILE);
     let emojis_json = read_to_string(path)?;
     let emojis: Emojis = serde_json::from_str(&emojis_json)?;
-    let baked = emojis.gitmojis[..].bake(&Default::default()).to_string();
+    let baked = (&emojis.gitmojis[..]).bake(&Default::default()).to_string();
 
-    let out = format!("pub const EMOJIS: &[crate::emoji::Emoji] = &{baked};\n");
+    let out = format!("pub const EMOJIS: &[crate::emoji::Emoji] = {baked};\n");
 
     let out_dir = var_os("OUT_DIR").unwrap();
     let dest_path = PathBuf::from(out_dir).join("emojis.rs");
