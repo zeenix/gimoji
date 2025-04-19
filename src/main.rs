@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("{}", selected);
     } else {
         println!("Copied {selected} to the clipboard");
-        copy_to_clipboard(selected)?; //FIXME here
+        copy_to_clipboard(selected)?;
     }
 
     Ok(())
