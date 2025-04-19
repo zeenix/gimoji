@@ -5,19 +5,19 @@ use crossterm::{
 use ratatui::backend::CrosstermBackend;
 use std::{
     error::Error,
-    io::{self, Stdout},
+    io::{self, Stderr},
     ops::{Deref, DerefMut},
 };
 
-pub struct Terminal(ratatui::Terminal<CrosstermBackend<Stdout>>);
+pub struct Terminal(ratatui::Terminal<CrosstermBackend<Stderr>>);
 
 impl Terminal {
     pub fn setup() -> Result<Self, Box<dyn Error>> {
         // setup terminal
         enable_raw_mode()?;
-        let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(stdout);
+        let mut stderr = io::stderr();
+        execute!(stderr, EnterAlternateScreen)?;
+        let backend = CrosstermBackend::new(stderr);
 
         ratatui::Terminal::new(backend)
             .map(Self)
@@ -42,7 +42,7 @@ impl Drop for Terminal {
 }
 
 impl Deref for Terminal {
-    type Target = ratatui::Terminal<CrosstermBackend<Stdout>>;
+    type Target = ratatui::Terminal<CrosstermBackend<Stderr>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

@@ -41,6 +41,10 @@ struct Args {
     /// If not specified, the color scheme is autodetected.
     #[arg(short, long)]
     color_scheme: Option<ColorScheme>,
+
+    /// Output the selected emoji to standard out.
+    #[arg(short, long)]
+    stdout: bool,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy)]
@@ -108,6 +112,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         if let Some(content) = commit_file_content {
             file.write_all(content.as_bytes())?;
         }
+    } else if args.stdout {
+        println!("{}", selected);
     } else {
         println!("Copied {selected} to the clipboard");
         copy_to_clipboard(selected)?;
