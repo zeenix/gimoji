@@ -41,6 +41,10 @@ struct Args {
     /// If not specified, the color scheme is autodetected.
     #[arg(short, long)]
     color_scheme: Option<ColorScheme>,
+
+    /// Output the selected emoji to standard out. Note that this switches the UI to render via stderr.
+    #[arg(short, long)]
+    stdout: bool,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy)]
@@ -95,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let color_scheme = get_color_scheme(&args);
-    let selected = match select_emoji(color_scheme.into())? {
+    let selected = match select_emoji(color_scheme.into(), args.stdout)? {
         Some(s) => s,
         None => return Ok(()),
     };
@@ -108,6 +112,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         if let Some(content) = commit_file_content {
             file.write_all(content.as_bytes())?;
         }
+    } else if args.stdout {
+        println!("{}", selected);
     } else {
         println!("Copied {selected} to the clipboard");
         copy_to_clipboard(selected)?;
@@ -116,10 +122,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
+fn select_emoji(colors: Colors, use_stderr: bool) -> Result<Option<String>, Box<dyn Error>> {
     let emojis = &emoji::EMOJIS;
 
-    let mut terminal = Terminal::setup()?;
+    let mut terminal = Terminal::setup(use_stderr)?;
     let mut search_entry = SearchEntry::new(&colors);
     let mut selection_view = SelectionView::new(emojis, &colors);
 
