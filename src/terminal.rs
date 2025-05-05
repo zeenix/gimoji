@@ -24,7 +24,7 @@ impl Terminal {
         let backend = CrosstermBackend::new(output);
 
         ratatui::Terminal::new(backend)
-            .map(|x| Self(x))
+            .map(Self)
             .map_err(Into::into)
     }
 
