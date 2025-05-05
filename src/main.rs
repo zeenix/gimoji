@@ -42,7 +42,7 @@ struct Args {
     #[arg(short, long)]
     color_scheme: Option<ColorScheme>,
 
-    /// Output the selected emoji to standard out.
+    /// Output the selected emoji to standard out. Note that this switches the UI to render via stderr.
     #[arg(short, long)]
     stdout: bool,
 }
@@ -99,7 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let color_scheme = get_color_scheme(&args);
-    let selected = match select_emoji(color_scheme.into())? {
+    let selected = match select_emoji(color_scheme.into(), args.stdout)? {
         Some(s) => s,
         None => return Ok(()),
     };
@@ -122,10 +122,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn select_emoji(colors: Colors) -> Result<Option<String>, Box<dyn Error>> {
+fn select_emoji(colors: Colors, use_stderr: bool) -> Result<Option<String>, Box<dyn Error>> {
     let emojis = &emoji::EMOJIS;
 
-    let mut terminal = Terminal::setup()?;
+    let mut terminal = Terminal::setup(use_stderr)?;
     let mut search_entry = SearchEntry::new(&colors);
     let mut selection_view = SelectionView::new(emojis, &colors);
 
