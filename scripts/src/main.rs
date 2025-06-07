@@ -4,7 +4,10 @@
 //! emoji database, preserving custom emojis while giving priority to upstream changes.
 
 use std::collections::HashSet;
+use std::env;
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 
 use clap::Parser;
@@ -202,16 +205,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Output for GitHub Actions only if requested.
-    if args.github_actions {
-        println!("::set-output name=has_changes::{}", has_changes);
-        println!("::set-output name=total_emojis::{}", stats.total);
-        println!("::set-output name=upstream_emojis::{}", stats.upstream);
-        println!("::set-output name=custom_emojis::{}", stats.custom);
-        println!(
-            "::set-output name=new_upstream_emojis::{}",
-            stats.new_upstream
-        );
+    if !args.github_actions {
+        return Ok(());
     }
+
+    let github_output = match env::var("GITHUB_OUTPUT") {
+        Ok(path) => path,
+        Err(_) => {
+            eprintln!("Warning: GITHUB_OUTPUT environment variable not set");
+            return Ok(());
+        }
+    };
+
+    // Use modern GitHub Actions environment files.
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&github_output)?;
+
+    writeln!(file, "has_changes={}", has_changes)?;
+    writeln!(file, "total_emojis={}", stats.total)?;
+    writeln!(file, "upstream_emojis={}", stats.upstream)?;
+    writeln!(file, "custom_emojis={}", stats.custom)?;
+    writeln!(file, "new_upstream_emojis={}", stats.new_upstream)?;
 
     Ok(())
 }
