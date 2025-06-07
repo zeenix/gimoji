@@ -43,17 +43,16 @@ pub struct EmojiDatabase {
 }
 
 /// Fetches the upstream gitmoji database.
-async fn fetch_upstream_database() -> Result<EmojiDatabase, Box<dyn std::error::Error>> {
+fn fetch_upstream_database() -> Result<EmojiDatabase, Box<dyn std::error::Error>> {
     println!("📡 Fetching upstream database...");
 
-    let response = reqwest::get(UPSTREAM_URL).await?;
-    let status = response.status();
+    let response = ureq::get(UPSTREAM_URL).call()?;
 
-    if !status.is_success() {
-        return Err(format!("HTTP {}: Failed to fetch upstream database", status).into());
+    if response.status() != 200 {
+        return Err(format!("HTTP {}: Failed to fetch upstream database", response.status()).into());
     }
 
-    let upstream: EmojiDatabase = response.json().await?;
+    let upstream: EmojiDatabase = response.into_json()?;
 
     if upstream.gitmojis.is_empty() {
         return Err("Upstream database is empty".into());
@@ -173,8 +172,7 @@ fn update_database(
     Ok(has_changes)
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     println!("🚀 Starting emoji database update...\n");
@@ -184,7 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_content = fs::read_to_string(EMOJIS_FILE)?;
 
     // Fetch upstream database.
-    let upstream = fetch_upstream_database().await?;
+    let upstream = fetch_upstream_database()?;
 
     println!();
 
