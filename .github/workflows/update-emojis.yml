@@ -68,10 +68,6 @@ jobs:
           branch: update-emoji-db
           branch-suffix: timestamp
           delete-branch: true
-          labels: |
-            🤖 automated
-            🔄 update
-            📦 dependencies
 
       - name: Cleanup
         if: always()
