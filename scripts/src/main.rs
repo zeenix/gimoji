@@ -46,13 +46,17 @@ pub struct EmojiDatabase {
 fn fetch_upstream_database() -> Result<EmojiDatabase, Box<dyn std::error::Error>> {
     println!("📡 Fetching upstream database...");
 
-    let response = ureq::get(UPSTREAM_URL).call()?;
+    let mut response = ureq::get(UPSTREAM_URL).call()?;
 
     if response.status() != 200 {
-        return Err(format!("HTTP {}: Failed to fetch upstream database", response.status()).into());
+        return Err(format!(
+            "HTTP {}: Failed to fetch upstream database",
+            response.status()
+        )
+        .into());
     }
 
-    let upstream: EmojiDatabase = response.into_json()?;
+    let upstream: EmojiDatabase = response.body_mut().read_json()?;
 
     if upstream.gitmojis.is_empty() {
         return Err("Upstream database is empty".into());
