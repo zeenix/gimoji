@@ -107,13 +107,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(path) = commit_file_path {
         // Just prepend the emoji to the file.
         let mut file = File::create(path)?;
-        let prefix = format!("{} ", selected);
+        let prefix = format!("{selected} ");
         file.write_all(prefix.as_bytes())?;
         if let Some(content) = commit_file_content {
             file.write_all(content.as_bytes())?;
         }
     } else if args.stdout {
-        println!("{}", selected);
+        println!("{selected}");
     } else {
         println!("Copied {selected} to the clipboard");
         copy_to_clipboard(selected)?;
