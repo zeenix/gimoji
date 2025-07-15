@@ -83,6 +83,10 @@ jobs:
                           const row = document.createElement('tr');
                           row.className = index === selectedIndex ? 'selected' : '';
                           row.onclick = () => copyToClipboard(emoji.code);
+                          row.onmouseenter = () => {
+                              selectedIndex = index;
+                              renderEmojis();
+                          };
 
                           const indicator = document.createElement('td');
                           indicator.className = 'indicator';
@@ -321,10 +325,6 @@ jobs:
               transition: none;
           }
 
-          #emoji-list tr:hover {
-              background-color: var(--term-selected-bg);
-              color: var(--term-selected-fg);
-          }
 
           #emoji-list tr.selected {
               background-color: var(--term-selected-bg);
