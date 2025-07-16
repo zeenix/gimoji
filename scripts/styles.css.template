@@ -1,0 +1,236 @@
+:root {
+    --term-bg: #000000;
+    --term-fg: #ffffff;
+    --term-border: #808080;
+    --term-selected-bg: #ffffff;
+    --term-selected-fg: #000000;
+    --term-dim: #666666;
+    --term-bright: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --term-bg: #ffffff;
+        --term-fg: #000000;
+        --term-border: #666666;
+        --term-selected-bg: #000000;
+        --term-selected-fg: #ffffff;
+        --term-dim: #999999;
+        --term-bright: #000000;
+    }
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    background-color: var(--term-bg);
+    color: var(--term-fg);
+    line-height: 1.4;
+    overflow: hidden;
+}
+
+.terminal {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--term-bg);
+}
+
+.terminal-window {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.search-box, .emoji-table {
+    margin-bottom: 0.5rem;
+}
+
+.box-title {
+    color: var(--term-border);
+    font-size: 1rem;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.search-input-wrapper {
+    border: 1px solid var(--term-border);
+    padding: 0.25rem;
+    background-color: var(--term-bg);
+}
+
+#search {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--term-fg);
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0;
+    outline: none;
+}
+
+#search::placeholder {
+    color: var(--term-dim);
+}
+
+.emoji-table {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid var(--term-border);
+    padding: 0.25rem;
+}
+
+#emoji-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#emoji-list tr {
+    cursor: pointer;
+    transition: none;
+}
+
+#emoji-list tr.selected {
+    background-color: var(--term-selected-bg);
+    color: var(--term-selected-fg);
+    font-weight: bold;
+}
+
+#emoji-list tr.selected .code-cell {
+    color: var(--term-selected-fg);
+}
+
+#emoji-list td {
+    padding: 0 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.indicator {
+    width: 2ch;
+    text-align: right;
+    padding-right: 0.5rem !important;
+}
+
+.emoji-cell {
+    width: 3ch;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.code-cell {
+    width: 20ch;
+    color: var(--term-bright);
+}
+
+.desc-cell {
+    width: auto;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.help-text {
+    margin-top: 0.5rem;
+    text-align: center;
+    color: var(--term-dim);
+    font-size: 0.9rem;
+}
+
+.key-hint {
+    background-color: var(--term-dim);
+    color: var(--term-bg);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin: 0 0.2rem;
+}
+
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--term-selected-bg);
+    color: var(--term-selected-fg);
+    padding: 0.75rem 1.5rem;
+    border: 1px solid var(--term-border);
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Scrollbar styling */
+.table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: var(--term-bg);
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: var(--term-dim);
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--term-border);
+}
+
+/* Firefox scrollbar */
+.table-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--term-dim) var(--term-bg);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .terminal-window {
+        padding: 0.5rem;
+        max-height: 100vh;
+    }
+
+    .box-title {
+        font-size: 0.8rem;
+    }
+
+    #search, #emoji-list {
+        font-size: 0.9rem;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+    }
+
+    .key-hint {
+        padding: 0.1rem 0.3rem;
+        font-size: 0.8rem;
+    }
+}
