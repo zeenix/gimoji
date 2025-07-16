@@ -52,7 +52,7 @@ jobs:
                       </div>
 
                       <div class="help-text">
-                          <span class="key-hint">↑↓</span> Navigate <span class="key-hint">Enter</span> Select <span class="key-hint">Esc</span> Clear/Exit <span class="key-hint">Click</span> Copy code
+                          <span class="key-hint">↑↓</span> Navigate <span class="key-hint">Enter</span> Select <span class="key-hint">Esc</span> Clear/Exit <span class="key-hint">Click</span> Copy emoji
                       </div>
                   </div>
 
@@ -82,7 +82,7 @@ jobs:
                       filteredEmojis.forEach((emoji, index) => {
                           const row = document.createElement('tr');
                           row.className = index === selectedIndex ? 'selected' : '';
-                          row.onclick = () => copyToClipboard(emoji.code);
+                          row.onclick = () => copyToClipboard(emoji.emoji);
                           row.onmouseenter = () => {
                               selectedIndex = index;
                               renderEmojis();
@@ -182,7 +182,7 @@ jobs:
                           case 'Enter':
                               e.preventDefault();
                               if (filteredEmojis[selectedIndex]) {
-                                  copyToClipboard(filteredEmojis[selectedIndex].code);
+                                  copyToClipboard(filteredEmojis[selectedIndex].emoji);
                               }
                               break;
                           case 'Escape':
