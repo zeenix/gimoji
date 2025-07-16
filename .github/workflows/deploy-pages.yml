@@ -83,7 +83,10 @@ jobs:
                       filteredEmojis.forEach((emoji, index) => {
                           const row = document.createElement('tr');
                           row.className = index === selectedIndex ? 'selected' : '';
-                          row.onclick = () => copyToClipboard(emoji.emoji);
+                          row.onclick = (e) => {
+                              copyToClipboard(emoji.emoji);
+                              document.getElementById('search').focus();
+                          };
                           row.onmouseenter = () => {
                               if (!isUsingKeyboard && selectedIndex !== index) {
                                   selectedIndex = index;
@@ -170,6 +173,13 @@ jobs:
 
                   // Keyboard navigation
                   document.addEventListener('keydown', (e) => {
+                      const searchInput = document.getElementById('search');
+
+                      // Always keep focus on search input
+                      if (document.activeElement !== searchInput) {
+                          searchInput.focus();
+                      }
+
                       if (filteredEmojis.length === 0) return;
 
                       switch(e.key) {
@@ -192,7 +202,6 @@ jobs:
                               }
                               break;
                           case 'Escape':
-                              const searchInput = document.getElementById('search');
                               if (searchInput.value) {
                                   searchInput.value = '';
                                   filterEmojis('');
