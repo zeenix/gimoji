@@ -63,6 +63,7 @@ jobs:
                   let emojis = [];
                   let selectedIndex = 0;
                   let filteredEmojis = [];
+                  let lastMouseIndex = -1;
                   async function loadEmojis() {
                       try {
                           const response = await fetch('emojis.json');
@@ -84,8 +85,11 @@ jobs:
                           row.className = index === selectedIndex ? 'selected' : '';
                           row.onclick = () => copyToClipboard(emoji.emoji);
                           row.onmouseenter = () => {
-                              selectedIndex = index;
-                              renderEmojis();
+                              if (lastMouseIndex !== index) {
+                                  lastMouseIndex = index;
+                                  selectedIndex = index;
+                                  renderEmojis();
+                              }
                           };
 
                           const indicator = document.createElement('td');
@@ -172,11 +176,13 @@ jobs:
                       switch(e.key) {
                           case 'ArrowUp':
                               e.preventDefault();
+                              lastMouseIndex = -1; // Reset mouse tracking
                               selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : filteredEmojis.length - 1;
                               renderEmojis();
                               break;
                           case 'ArrowDown':
                               e.preventDefault();
+                              lastMouseIndex = -1; // Reset mouse tracking
                               selectedIndex = selectedIndex < filteredEmojis.length - 1 ? selectedIndex + 1 : 0;
                               renderEmojis();
                               break;
