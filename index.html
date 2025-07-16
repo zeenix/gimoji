@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gimoji - Git Commit Emojis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-window">
+            <div class="search-box">
+                <div class="box-title">┌─ Search an emoji ─┐</div>
+                <div class="search-input-wrapper">
+                    <input type="text" id="search" placeholder="Use arrow keys or type to search" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="emoji-table">
+                <div class="box-title">┌─ Select an emoji ─┐</div>
+                <div class="table-container">
+                    <table id="emoji-list">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="help-text">
+                <span class="key-hint">↑↓</span> Navigate <span class="key-hint">Enter</span> Select <span class="key-hint">Esc</span> Clear/Exit <span class="key-hint">Click</span> Copy emoji
+            </div>
+        </div>
+
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script>
+        let emojis = [];
+        let selectedIndex = 0;
+        let filteredEmojis = [];
+        let isUsingKeyboard = false;
+
+        async function loadEmojis() {
+            try {
+                const response = await fetch('emojis.json');
+                const data = await response.json();
+                emojis = data.gitmojis;
+                filteredEmojis = emojis;
+                renderEmojis();
+            } catch (error) {
+                console.error('Failed to load emojis:', error);
+            }
+        }
+
+        function renderEmojis() {
+            const tbody = document.querySelector('#emoji-list tbody');
+            tbody.innerHTML = '';
+
+            filteredEmojis.forEach((emoji, index) => {
+                const row = document.createElement('tr');
+                row.className = index === selectedIndex ? 'selected' : '';
+                row.onclick = (e) => {
+                    copyToClipboard(emoji.emoji);
+                    document.getElementById('search').focus();
+                };
+                row.onmouseenter = () => {
+                    if (!isUsingKeyboard && selectedIndex !== index) {
+                        selectedIndex = index;
+                        renderEmojis();
+                    }
+                };
+
+                const indicator = document.createElement('td');
+                indicator.className = 'indicator';
+                indicator.textContent = index === selectedIndex ? '❯' : '';
+
+                const emojiCell = document.createElement('td');
+                emojiCell.className = 'emoji-cell';
+                emojiCell.textContent = emoji.emoji;
+
+                const codeCell = document.createElement('td');
+                codeCell.className = 'code-cell';
+                codeCell.textContent = emoji.code;
+
+                const descCell = document.createElement('td');
+                descCell.className = 'desc-cell';
+                descCell.textContent = emoji.description;
+
+                row.appendChild(indicator);
+                row.appendChild(emojiCell);
+                row.appendChild(codeCell);
+                row.appendChild(descCell);
+
+                tbody.appendChild(row);
+            });
+
+            // Scroll selected item into view
+            const selectedRow = tbody.children[selectedIndex];
+            if (selectedRow) {
+                selectedRow.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function filterEmojis(searchTerm) {
+            const term = searchTerm.toLowerCase();
+            filteredEmojis = searchTerm
+                ? emojis.filter(emoji =>
+                    emoji.name.toLowerCase().includes(term) ||
+                    emoji.code.toLowerCase().includes(term) ||
+                    emoji.description.toLowerCase().includes(term)
+                )
+                : emojis;
+
+            selectedIndex = filteredEmojis.length > 0 ? 0 : -1;
+            renderEmojis();
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(text);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast(text);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function showToast(emoji) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `${emoji} copied to clipboard!`;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const searchInput = document.getElementById('search');
+
+            // Always keep focus on search input
+            if (document.activeElement !== searchInput) {
+                searchInput.focus();
+            }
+
+            if (filteredEmojis.length === 0) return;
+
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    isUsingKeyboard = true;
+                    selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : filteredEmojis.length - 1;
+                    renderEmojis();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    isUsingKeyboard = true;
+                    selectedIndex = selectedIndex < filteredEmojis.length - 1 ? selectedIndex + 1 : 0;
+                    renderEmojis();
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (filteredEmojis[selectedIndex]) {
+                        copyToClipboard(filteredEmojis[selectedIndex].emoji);
+                    }
+                    break;
+                case 'Escape':
+                    if (searchInput.value) {
+                        searchInput.value = '';
+                        filterEmojis('');
+                    }
+                    break;
+            }
+        });
+
+        // Search functionality
+        document.getElementById('search').addEventListener('input', (e) => {
+            filterEmojis(e.target.value);
+        });
+
+        // Reset keyboard flag on mouse movement
+        document.addEventListener('mousemove', () => {
+            isUsingKeyboard = false;
+        });
+
+        // Focus search input on load
+        document.getElementById('search').focus();
+
+        // Load emojis on page load
+        loadEmojis();
+    </script>
+</body>
+</html>
