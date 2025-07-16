@@ -4,7 +4,8 @@ This directory contains utility scripts for maintaining the Gimoji project.
 
 ## update-emojis
 
-A Rust application that automatically updates the emoji database from the upstream [gitmoji](https://github.com/carloscuesta/gitmoji) repository.
+A Rust application that automatically updates the emoji database from the upstream
+[gitmoji](https://github.com/carloscuesta/gitmoji) repository.
 
 ### Usage
 
@@ -50,12 +51,14 @@ When merging databases, the script handles conflicts by:
 
 ### Automation
 
-This Rust application is also used by the GitHub Actions workflow (`.github/workflows/update-emojis.yml`) that runs automatically:
+This Rust application is also used by the GitHub Actions workflow
+(`.github/workflows/update-emojis.yml`) that runs automatically:
 
 - **Scheduled**: First day of every month at 02:00 UTC
 - **Manual**: Can be triggered via GitHub Actions interface
 
-The workflow will create a pull request when updates are available. When run by the workflow, the tool uses the `--github-actions` flag to output GitHub Actions-compatible format.
+The workflow will create a pull request when updates are available. When run by the workflow, the
+tool uses the `--github-actions` flag to output GitHub Actions-compatible format.
 
 ### Error Handling
 
