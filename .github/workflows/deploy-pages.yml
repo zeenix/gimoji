@@ -63,7 +63,7 @@ jobs:
                   let emojis = [];
                   let selectedIndex = 0;
                   let filteredEmojis = [];
-                  let lastMouseIndex = -1;
+                  let isUsingKeyboard = false;
                   async function loadEmojis() {
                       try {
                           const response = await fetch('emojis.json');
@@ -85,8 +85,7 @@ jobs:
                           row.className = index === selectedIndex ? 'selected' : '';
                           row.onclick = () => copyToClipboard(emoji.emoji);
                           row.onmouseenter = () => {
-                              if (lastMouseIndex !== index) {
-                                  lastMouseIndex = index;
+                              if (!isUsingKeyboard && selectedIndex !== index) {
                                   selectedIndex = index;
                                   renderEmojis();
                               }
@@ -176,13 +175,13 @@ jobs:
                       switch(e.key) {
                           case 'ArrowUp':
                               e.preventDefault();
-                              lastMouseIndex = -1; // Reset mouse tracking
+                              isUsingKeyboard = true;
                               selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : filteredEmojis.length - 1;
                               renderEmojis();
                               break;
                           case 'ArrowDown':
                               e.preventDefault();
-                              lastMouseIndex = -1; // Reset mouse tracking
+                              isUsingKeyboard = true;
                               selectedIndex = selectedIndex < filteredEmojis.length - 1 ? selectedIndex + 1 : 0;
                               renderEmojis();
                               break;
@@ -205,6 +204,11 @@ jobs:
                   // Search functionality
                   document.getElementById('search').addEventListener('input', (e) => {
                       filterEmojis(e.target.value);
+                  });
+
+                  // Reset keyboard flag on mouse movement
+                  document.addEventListener('mousemove', () => {
+                      isUsingKeyboard = false;
                   });
 
                   // Focus search input on load
