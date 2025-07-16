@@ -56,7 +56,7 @@ jobs:
                       </div>
                   </div>
 
-                  <div id="toast" class="toast">Copied to clipboard!</div>
+                  <div id="toast" class="toast"></div>
               </div>
 
               <script>
@@ -136,7 +136,7 @@ jobs:
                   async function copyToClipboard(text) {
                       try {
                           await navigator.clipboard.writeText(text);
-                          showToast();
+                          showToast(text);
                       } catch (err) {
                           // Fallback for older browsers
                           const textArea = document.createElement('textarea');
@@ -148,7 +148,7 @@ jobs:
                           textArea.select();
                           try {
                               document.execCommand('copy');
-                              showToast();
+                              showToast(text);
                           } catch (err) {
                               console.error('Failed to copy:', err);
                           }
@@ -156,8 +156,9 @@ jobs:
                       }
                   }
 
-                  function showToast() {
+                  function showToast(emoji) {
                       const toast = document.getElementById('toast');
+                      toast.innerHTML = `${emoji} copied to clipboard!`;
                       toast.classList.add('show');
                       setTimeout(() => {
                           toast.classList.remove('show');
