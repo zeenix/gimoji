@@ -594,6 +594,14 @@
       "semver": null
     },
     {
+      "emoji": "🦖",
+      "entity": "&#x2708;",
+      "code": ":t-rex:",
+      "description": "Code that adds backwards compatibility.",
+      "name": "t-rex",
+      "semver": null
+    },
+    {
       "emoji": "🔌",
       "entity": "&#x1F50C;",
       "code": ":electric_plug:",
