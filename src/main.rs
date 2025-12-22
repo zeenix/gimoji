@@ -7,7 +7,7 @@ mod selection_view;
 mod terminal;
 
 use arboard::Clipboard;
-use clap::{command, Parser, ValueEnum};
+use clap::{Parser, ValueEnum};
 use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
