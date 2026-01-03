@@ -1,0 +1,4 @@
+[prepare-commit-msg.commands.gimoji]
+interactive = true
+run = "gimoji --hook {1} {2} || true"
+use_stdin = true
