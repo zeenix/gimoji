@@ -38,9 +38,9 @@ then copy your choice to the system clipboard.
 
 Use `--help` to see all the available options.
 
-### [lefthook]
+### `lefthook`
 
-If you'd prefer to use `lefthook`, you may add something like the following to your `.lefthook.toml`:
+If you'd prefer to use [lefthook], you may add something like the following to your `.lefthook.toml`:
 
 ```toml
 [prepare-commit-msg.commands.gimoji]
@@ -73,5 +73,5 @@ The philosophy here is to enable you to quickly and easily choose an emoji and g
 
 [gitmoji]: https://github.com/carloscuesta/gitmoji
 [gitmoji-cli]: https://github.com/carloscuesta/gitmoji-cli
-[lefthook](https://lefthook.dev/)
+[lefthook]: https://lefthook.dev/
 [slow]: https://github.com/carloscuesta/gitmoji-cli/issues/1096
