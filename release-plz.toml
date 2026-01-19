@@ -13,11 +13,9 @@ publish = true
 # We're not a library.
 semver_check = false
  
-# Bump minor version for non-bugfix commits (gimoji).
-# Bugfixes (🐛🚑️🩹🥅) and docs (📝💡) remain as patches.
-# Emojis extracted from gimoji database with correct variation selectors.
+# Bump minor version for non-bugfix commits.
 custom_minor_increment_regex = """\
-^(🎨|⚡️|🔥|✨|💄|🎉|✅|🔒️|💚|⬇️|⬆️|📌|👷|♻️|➕|➖|🔧|👽️|🚚|💥|♿️|💬|🔊|🔇|🚸|🏗️|🗑️|🧪)\
+^(🎨|⚡️|🔥|✨|💄|🎉|🔒️|⬇️|⬆️|📌|➕|➖|🔧|👽️|💥|♿️|💬|🔊|🔇|🚸|🏗️|🗑️)\
 """
 
 # PR configuration.
