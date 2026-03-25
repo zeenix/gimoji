@@ -1,6 +1,7 @@
 {
   "name": "@gimoji/commitlint-plugin-gimoji",
   "version": "0.1.0",
+  "main": "index.mjs",
   "type": "module",
   "repository": {
     "type": "git",
@@ -13,7 +14,18 @@
     "Zeeshan Ali Khan <zeeshanak@gnome.org>"
   ],
   "keywords": [
+    "commitlint",
+    "commitlint-plugin",
     "emoji",
     "git"
+  ],
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "peerDependencies": {
+    "@commitlint/lint": ">=7.6.0"
+  },
+  "files": [
+    "index.mjs"
   ]
 }
