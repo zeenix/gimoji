@@ -1,0 +1,31 @@
+{
+  "name": "@gimoji/commitlint-config-gimoji",
+  "version": "0.1.0",
+  "main": "index.mjs",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zeenix/gimoji.git"
+  },
+  "license": "MIT",
+  "author": "Ron Waldon-Howe <ron@waldonhowe.org>",
+  "contributors": [
+    "Zeeshan Ali Khan <zeeshanak@gnome.org>"
+  ],
+  "keywords": [
+    "commitlint",
+    "commitlint-plugin",
+    "emoji",
+    "git"
+  ],
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "peerDependencies": {
+    "@commitlint/lint": ">=7.6.0",
+    "@gimoji/commitlint-plugin-gimoji": "0.1.0"
+  },
+  "files": [
+    "index.mjs"
+  ]
+}
