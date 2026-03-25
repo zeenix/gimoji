@@ -27,5 +27,8 @@
   },
   "files": [
     "index.mjs"
-  ]
+  ],
+  "scripts": {
+    "test": "node --test"
+  }
 }
