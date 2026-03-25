@@ -1,0 +1,19 @@
+{
+  "name": "@gimoji/commitlint-plugin-gimoji",
+  "version": "0.1.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeenix/gimoji.git"
+  },
+  "license": "MIT",
+  "private": false,
+  "author": "Ron Waldon-Howe <ron@waldonhowe.org>",
+  "contributors": [
+    "Zeeshan Ali Khan <zeeshanak@gnome.org>"
+  ],
+  "keywords": [
+    "emoji",
+    "git"
+  ]
+}
