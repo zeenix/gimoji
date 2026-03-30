@@ -1,0 +1,42 @@
+# https://commitlint.js.org/guides/ci-setup.html
+
+name: commitlint
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+
+      - name: Install commitlint
+        run: |
+          npm install @commitlint/cli
+          npm install ./packages/commitlint-config-gimoji
+          npm install ./packages/commitlint-plugin-gimoji
+
+      - name: Print versions
+        run: |
+          git --version
+          node --version
+          npm --version
+          npm exec commitlint -- --version
+
+      - name: Validate current commit (last commit) with commitlint
+        if: github.event_name == 'push'
+        run: npm exec commitlint -- --last --verbose
+
+      - name: Validate PR commits with commitlint
+        if: github.event_name == 'pull_request'
+        run: npm exec commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
