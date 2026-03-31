@@ -1,0 +1,28 @@
+name: npm-publish
+
+# manual trigger for now
+# https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  id-token: write # https://docs.npmjs.com/trusted-publishers
+
+jobs:
+  npm-publish:
+    environment:
+      deployment: true
+      name: npmjs-com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm publish --workspaces
