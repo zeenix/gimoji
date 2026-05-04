@@ -12,11 +12,11 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Bake)]
 #[databake(path = gimoji::emoji)]
 pub struct Emoji<'e> {
-    code: &'e str,
-    description: &'e str,
-    emoji: &'e str,
-    entity: &'e str,
-    name: &'e str,
+    pub code: &'e str,
+    pub description: &'e str,
+    pub emoji: &'e str,
+    pub entity: &'e str,
+    pub name: &'e str,
 }
 
 #[derive(serde::Deserialize, Debug)]
