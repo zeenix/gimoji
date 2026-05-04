@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0 - 2026-05-04
+
+### Added
+- 👷 add "npm-publish" manually-triggered GitHub Action.
+- 👷 lint commit messages during builds.
+- ✨ implement shared config.
+- ✨ copy-paste in our working implementation.
+
+### Changed
+- 🔧 new workspace package.
+- 🔧 some commitlint-specific package metadata.
+- 🔧 new stub workspace package.
+- 🔧 add new `npm` configuration for upcoming workspaces/packages.
+
+### Dependencies
+- ⬆️ Update databake to v0.2.1 (#319).
+- ⬆️ Update nix to v0.31.2 (#313).
+- ⬆️ Update regex to v1.12.3 (#307).
+
+### Fixed
+- 🐛 databake pro-macro panic.
+
+### Other
+- 🙈 ignore node_modules directory.
+- 🤖 Adjust minor update emoji list.
+- 🤖 Custom regex for minor version bump.
+
+### Testing
+- 🧪 add failing tests.
+
 ## 1.2.0 - 2026-01-14
 
 ### Added
