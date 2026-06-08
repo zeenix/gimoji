@@ -63,7 +63,7 @@ pub struct FilteredView<'s, 'c> {
 
 impl FilteredView<'_, '_> {
     pub fn selected(&self) -> Option<&Emoji> {
-        self.emojis.get(self.state.selected().unwrap()).copied()
+        self.emojis.get(self.state.selected()?).copied()
     }
 
     pub fn move_up(&mut self) {
