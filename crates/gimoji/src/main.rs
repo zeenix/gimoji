@@ -1,10 +1,10 @@
+mod clipboard;
+mod event_to_action;
 mod terminal;
 
-use arboard::Clipboard;
 use clap::{Parser, ValueEnum};
-use crossterm::event::{read, Event, KeyCode, KeyModifiers};
-use gimoji_core::{Colors, SearchEntry, SelectionView, EMOJIS};
-use ratatui::layout::{Constraint, Layout};
+use crossterm::event::{read, Event};
+use gimoji_core::{App, Colors, Outcome, EMOJIS};
 use std::{
     error::Error,
     fs::{File, OpenOptions},
@@ -108,7 +108,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("{selected}");
     } else {
         println!("Copied {selected} to the clipboard");
-        copy_to_clipboard(selected)?;
+        gimoji_core::Clipboard::copy(&mut clipboard::ArboardImpl, &selected)?;
     }
 
     Ok(())
@@ -116,59 +116,29 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn select_emoji(colors: Colors, use_stderr: bool) -> Result<Option<String>, Box<dyn Error>> {
     let mut terminal = Terminal::setup(use_stderr)?;
-    let mut search_entry = SearchEntry::new(&colors);
-    let mut selection_view = SelectionView::new(EMOJIS, &colors);
+    let mut app = App::new(EMOJIS, &colors);
 
-    let selected = loop {
-        let search_text = search_entry.text();
-        let mut filtered_view = selection_view.filtered_view(search_text);
+    loop {
+        terminal.draw(|f| app.render(f))?;
 
-        terminal.draw(|f| {
-            let chunks = Layout::default()
-                .constraints([Constraint::Min(5), Constraint::Percentage(100)].as_ref())
-                .margin(1)
-                .split(f.area());
-
-            // The search entry goes at the top.
-            f.render_widget(&search_entry, chunks[0]);
-
-            // The emoji list.
-            f.render_widget(&mut filtered_view, chunks[1]);
-        })?;
-
-        if let Event::Key(event) = read()? {
-            match event.code {
-                KeyCode::Enter => {
-                    if let Some(emoji) = filtered_view.selected() {
-                        break Some(emoji.emoji().to_string());
-                    }
-                }
-                KeyCode::Esc => {
-                    if search_text.is_empty() {
-                        break None;
-                    } else {
-                        search_entry.delete_all();
-                    }
-                }
-                KeyCode::Down => filtered_view.move_down(),
-                KeyCode::Up => filtered_view.move_up(),
-                KeyCode::Char(c) => {
-                    if c == 'c' && event.modifiers.contains(KeyModifiers::CONTROL) {
-                        let _ = terminal.cleanup();
-                        exit(130);
-                    } else {
-                        search_entry.append(c)
-                    }
-                }
-                KeyCode::Backspace => {
-                    search_entry.delete_last();
-                }
-                _ => {}
+        let Event::Key(event) = read()? else {
+            continue;
+        };
+        let action = match event_to_action::from_key_event(event, app.search_text().is_empty()) {
+            Ok(Some(a)) => a,
+            Ok(None) => continue,
+            Err(_) => {
+                let _ = terminal.cleanup();
+                exit(130);
             }
-        }
-    };
+        };
 
-    Ok(selected)
+        match app.handle(action) {
+            Outcome::Continue => {}
+            Outcome::Picked(s) => return Ok(Some(s)),
+            Outcome::Cancelled => return Ok(None),
+        }
+    }
 }
 
 fn install_hook() -> Result<(), Box<dyn Error>> {
@@ -194,46 +164,6 @@ fn install_hook() -> Result<(), Box<dyn Error>> {
     file.set_permissions(Permissions::from_mode(0o744))?;
 
     Ok(())
-}
-
-/// Copy the text to the clipboard.
-///
-/// This function exits the process and never returns because on some platforms (X11, Wayland)
-/// clipboard data is only available for as long as the process that "owns" it is alive, in which
-/// case this function will spawn a background task to host the clipboard data.
-///
-/// Note that it is possible to make it work without exiting the process, but it would require an
-/// `unsafe { fork() }`. However, in this program this is simply not needed.
-fn copy_to_clipboard(s: String) -> Result<(), Box<dyn Error>> {
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "solaris"
-    ))]
-    {
-        use arboard::SetExtLinux;
-        nix::unistd::daemon(false, false)?;
-        Clipboard::new()?.set().wait().text(s)?;
-    }
-
-    #[cfg(not(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "solaris"
-    )))]
-    {
-        Clipboard::new()?.set().text(s)?;
-    }
-
-    exit(0)
 }
 
 // Color scheme selection. Precedence: env, arg, detection, default.
