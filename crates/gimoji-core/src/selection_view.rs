@@ -4,7 +4,6 @@ use ratatui::{
     style::{Modifier, Style},
     widgets::{Block, Borders, Padding, Row, StatefulWidget, Table, TableState, Widget},
 };
-use regex::RegexBuilder;
 
 use crate::colors::Colors;
 use crate::emoji::Emoji;
@@ -28,14 +27,11 @@ impl<'c> SelectionView<'c> {
     }
 
     pub fn filtered_view(&mut self, search_text: &str) -> FilteredView<'_, '_> {
-        let pattern = RegexBuilder::new(&regex::escape(search_text))
-            .case_insensitive(true)
-            .build()
-            .expect("invalid characters in search text");
+        let needle = search_text.to_ascii_lowercase();
         let emojis: Vec<&Emoji> = self
             .emojis
             .iter()
-            .filter(|emoji| search_text.is_empty() || emoji.contains(&pattern))
+            .filter(|emoji| needle.is_empty() || emoji.contains(&needle))
             .collect();
 
         self.state

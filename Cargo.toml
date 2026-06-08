@@ -1,37 +1,14 @@
-[package]
-name = "gimoji"
-description = "Easily add emojis to your git commit messages 🎉"
-version = "1.3.0"
+[workspace]
+members = ["crates/gimoji-core", "crates/gimoji"]
+resolver = "2"
+exclude = ["scripts"]
+
+[workspace.package]
+version = "1.4.0"
 edition = "2021"
 license = "MIT"
 authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
 repository = "https://github.com/zeenix/gimoji"
-keywords = ["CLI", "git", "emoji"]
-categories = ["development-tools"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-clap = { version = "4.5.4", features = ["derive"] }
-crossterm = { version = "0.29.0", features = ["use-dev-tty"] }
-ratatui = "0.30.0"
-regex = { version = "1.10.4", default-features = false, features = [
-    "std",
-    "perf",
-    "unicode-case",
-] }
-arboard = { version = "3.4.0", default-features = false, features = [
-    "wayland-data-control",
-] }
-terminal-light = "1.4.0"
-
-[target.'cfg(unix)'.dependencies]
-nix = { version = "0.31", default-features = false, features = ["process"] }
-
-[build-dependencies]
-serde = { version = "1.0.200", features = ["derive"] }
-serde_json = "1.0.116"
-databake = { version = "0.2.1", features = ["derive"] }
 
 [profile.release]
 lto = "fat"
