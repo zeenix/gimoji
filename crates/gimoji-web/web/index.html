@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>gimoji</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <canvas id="gimoji-canvas"></canvas>
+  <div id="fallback" hidden>
+    Your browser doesn't support the gimoji canvas renderer.
+    See <a href="https://github.com/zeenix/gimoji">the GitHub repository</a> for the CLI version.
+  </div>
+  <script type="module">
+    import init from "./gimoji_web.js";
+    init().catch((e) => {
+      console.error(e);
+      document.getElementById("gimoji-canvas").hidden = true;
+      document.getElementById("fallback").hidden = false;
+    });
+  </script>
+</body>
+</html>

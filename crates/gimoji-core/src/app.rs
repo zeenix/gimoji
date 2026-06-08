@@ -1,9 +1,12 @@
 use std::time::Duration;
 
-use ratatui::Frame;
+use ratatui::{layout::Rect, Frame};
 
 use crate::{
-    colors::Colors, emoji::Emoji, search_entry::SearchEntry, selection_view::SelectionView,
+    colors::Colors,
+    emoji::Emoji,
+    search_entry::SearchEntry,
+    selection_view::{EmojiSource, SelectionView, EMOJI_COLUMN_WIDTH, HIGHLIGHT_GUTTER_WIDTH},
     toast::Toast,
 };
 
@@ -15,6 +18,7 @@ pub enum Action {
     MoveUp,
     MoveDown,
     PickFocused,
+    PickAt(usize),
     Cancel,
 }
 
@@ -31,15 +35,47 @@ pub struct App<'c> {
     #[allow(dead_code)]
     colors: &'c Colors,
     toast: Option<Toast>,
+    emoji_source: EmojiSource,
+    last_rendered_rows: Vec<Rect>,
+    last_visible_emojis: Vec<VisibleEmoji>,
+}
+
+/// One row of the picker as positioned during the last render. The web
+/// frontend consumes this list to place HTML emoji overlays at the right
+/// cell coordinates; native ignores it.
+#[derive(Debug, Clone, Copy)]
+pub struct VisibleEmoji {
+    /// Cell rect of the emoji glyph column (3 cells wide × 1 cell high).
+    pub cell: Rect,
+    /// Unicode emoji to render at that position.
+    pub emoji: &'static str,
 }
 
 impl<'c> App<'c> {
+    /// Build a picker that emits emoji glyphs directly into the buffer.
+    /// The host (e.g. crossterm + terminal) draws them from its own font.
     pub fn new(emojis: &'static [Emoji], colors: &'c Colors) -> Self {
+        Self::build(emojis, colors, EmojiSource::InCanvas)
+    }
+
+    /// Build a picker whose emoji column is left blank in the buffer so a
+    /// separate layer (e.g. the web frontend's DOM overlay) can paint the
+    /// glyphs. Keeps column alignment stable across rows even when the
+    /// emoji is a ZWJ sequence whose `unicode-width` count doesn't match
+    /// its rendered width.
+    pub fn with_emoji_overlay(emojis: &'static [Emoji], colors: &'c Colors) -> Self {
+        Self::build(emojis, colors, EmojiSource::Overlay)
+    }
+
+    fn build(emojis: &'static [Emoji], colors: &'c Colors, source: EmojiSource) -> Self {
         Self {
             search: SearchEntry::new(colors),
-            selection: SelectionView::new(emojis, colors),
+            selection: SelectionView::new(emojis, colors, source),
             colors,
             toast: None,
+            emoji_source: source,
+            last_rendered_rows: Vec::new(),
+            last_visible_emojis: Vec::new(),
         }
     }
 
@@ -78,16 +114,33 @@ impl<'c> App<'c> {
                     None => Outcome::Continue,
                 }
             }
+            Action::PickAt(i) => {
+                let view = self.selection.filtered_view(self.search.text());
+                match view.get(i) {
+                    Some(emoji) => Outcome::Picked(emoji.emoji().to_string()),
+                    None => Outcome::Continue,
+                }
+            }
             Action::Cancel => Outcome::Cancelled,
         }
     }
 
-    pub fn show_toast(&mut self, text: impl Into<String>) {
-        self.toast = Some(Toast::new(text));
+    /// Show a confirmation toast for a freshly picked emoji. The prefix
+    /// is rendered into the buffer, the emoji glyph is rendered by the
+    /// canvas on native and by the DOM overlay on web — see
+    /// [`Self::toast_overlay_emoji`].
+    pub fn show_toast(&mut self, prefix: impl Into<String>, emoji: impl Into<String>) {
+        self.toast = Some(Toast::new(prefix, emoji, self.emoji_source));
     }
 
     pub fn has_toast(&self) -> bool {
         self.toast.is_some()
+    }
+
+    /// Cell position and glyph of the toast's emoji slot, if any. Used by
+    /// the web frontend to extend its DOM overlay with the toast emoji.
+    pub fn toast_overlay_emoji(&self) -> Option<(Rect, &str)> {
+        self.toast.as_ref().and_then(|t| t.emoji_cell())
     }
 
     pub fn tick(&mut self, dt: Duration) {
@@ -108,12 +161,72 @@ impl<'c> App<'c> {
 
         frame.render_widget(&self.search, chunks[0]);
 
-        let mut view = self.selection.filtered_view(self.search.text());
-        frame.render_widget(&mut view, chunks[1]);
+        let list_area = chunks[1];
+        let inner_left = list_area.x.saturating_add(2);
+        let inner_top = list_area.y.saturating_add(2);
+        let inner_w = list_area.width.saturating_sub(4);
+        let inner_bottom = list_area.y + list_area.height.saturating_sub(1);
+        let visible_h = inner_bottom.saturating_sub(inner_top);
+        // Emoji glyph column starts after the row's border+padding gutter
+        // and the always-reserved highlight-symbol gutter.
+        let emoji_x = inner_left.saturating_add(HIGHLIGHT_GUTTER_WIDTH);
+
+        // Capture the visible row contents into a local while the view
+        // borrows `self.selection`, then write into `self.last_*` once the
+        // view is dropped. Reading `view.offset()` *after* the render is
+        // important: the Table widget updates the offset during render to
+        // scroll the selection into view.
+        let mut visible: Vec<(u16, &'static str)> = Vec::new();
+        {
+            let mut view = self.selection.filtered_view(self.search.text());
+            let visible_count = view.visible_count();
+            frame.render_widget(&mut view, chunks[1]);
+            let view_offset = view.offset();
+            let row_count = visible_count
+                .saturating_sub(view_offset)
+                .min(visible_h as usize);
+            visible.reserve_exact(row_count);
+            for i in 0..row_count {
+                let y = inner_top + i as u16;
+                let emoji = match view.get(view_offset + i) {
+                    Some(e) => e.emoji(),
+                    None => continue,
+                };
+                visible.push((y, emoji));
+            }
+        }
+
+        self.last_rendered_rows.clear();
+        self.last_visible_emojis.clear();
+        for (y, emoji) in visible {
+            self.last_rendered_rows.push(Rect {
+                x: inner_left,
+                y,
+                width: inner_w,
+                height: 1,
+            });
+            self.last_visible_emojis.push(VisibleEmoji {
+                cell: Rect {
+                    x: emoji_x,
+                    y,
+                    width: EMOJI_COLUMN_WIDTH,
+                    height: 1,
+                },
+                emoji,
+            });
+        }
 
         if let Some(toast) = &mut self.toast {
             toast.render(frame.area(), frame.buffer_mut());
         }
+    }
+
+    pub fn row_rect(&self, row_index: usize) -> Option<Rect> {
+        self.last_rendered_rows.get(row_index).copied()
+    }
+
+    pub fn visible_emojis(&self) -> &[VisibleEmoji] {
+        &self.last_visible_emojis
     }
 }
 
@@ -201,6 +314,24 @@ mod tests {
     }
 
     #[test]
+    fn pick_at_index_returns_the_corresponding_emoji() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        let outcome = app.handle(Action::PickAt(2));
+        assert_eq!(outcome, Outcome::Picked(emojis[2].emoji().to_string()));
+    }
+
+    #[test]
+    fn pick_at_out_of_bounds_index_returns_continue() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        assert_eq!(
+            app.handle(Action::PickAt(emojis.len() + 100)),
+            Outcome::Continue
+        );
+    }
+
+    #[test]
     fn cancel_returns_cancelled() {
         let (emojis, colors) = fixture();
         let mut app = App::new(emojis, &colors);
@@ -211,9 +342,16 @@ mod tests {
     fn tick_clears_expired_toast() {
         let (emojis, colors) = fixture();
         let mut app = App::new(emojis, &colors);
-        app.show_toast("Copied 🎉");
+        app.show_toast("Copied", "🎉");
         assert!(app.has_toast());
         app.tick(Duration::from_secs(5));
         assert!(!app.has_toast());
+    }
+
+    #[test]
+    fn row_rect_returns_none_before_first_render() {
+        let (emojis, colors) = fixture();
+        let app = App::new(emojis, &colors);
+        assert!(app.row_rect(0).is_none());
     }
 }

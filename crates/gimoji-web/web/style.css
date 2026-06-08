@@ -1,0 +1,39 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0e0e0e;
+}
+#gimoji-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;
+}
+/* Container for emoji glyphs painted over the wgpu canvas. The browser
+   renders each emoji as plain text via its system emoji font stack, so
+   we never bundle a color font into the WASM. pointer-events:none lets
+   clicks fall through to the canvas. */
+#gimoji-emoji-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  user-select: none;
+}
+#gimoji-emoji-overlay span {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    "Twemoji Mozilla", "EmojiOne Color", emoji, sans-serif;
+  font-variant-emoji: emoji;
+  text-rendering: optimizeLegibility;
+}
+#fallback {
+  color: #ddd;
+  font-family: system-ui, sans-serif;
+  padding: 1rem;
+}

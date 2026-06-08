@@ -1,0 +1,10 @@
+This directory contains a font vendored unmodified for use by gimoji-web.
+
+JetBrains Mono Regular
+  Source: https://github.com/JetBrains/JetBrainsMono
+  Version: 2.304
+  License: Apache-2.0 — https://www.apache.org/licenses/LICENSE-2.0
+
+Emoji glyphs are rendered as DOM overlay using the browser's system emoji
+font stack (Apple Color Emoji / Segoe UI Emoji / Noto Color Emoji), so no
+emoji font is bundled.

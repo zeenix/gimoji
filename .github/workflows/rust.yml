@@ -23,6 +23,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Check build
         # Ensure we didn't forget to push the `Cargo.lock` changes using `--locked`.
+        # `exclude = "crates/gimoji-web"` in the root Cargo.toml keeps this on
+        # the native crates only.
         run: cargo --locked check
 
   lint:
@@ -36,9 +38,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Check formatting
         run: cargo fmt -- --check
-      - name: Catch common mistakes and unwrap calls
-        run: cargo clippy -- -D warnings
+      - name: Clippy (native)
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Clippy (wasm)
+        working-directory: crates/gimoji-web
+        run: cargo clippy --locked --all-targets -- -D warnings
