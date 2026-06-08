@@ -1,0 +1,76 @@
+name: Deploy gimoji-web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/gimoji-core/**'
+      - 'crates/gimoji-web/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version 0.2.122 --locked
+
+      - name: Install binaryen (wasm-opt)
+        run: |
+          BIN_VER=119
+          curl -L https://github.com/WebAssembly/binaryen/releases/download/version_${BIN_VER}/binaryen-version_${BIN_VER}-x86_64-linux.tar.gz \
+            | tar -xz
+          echo "${PWD}/binaryen-version_${BIN_VER}/bin" >> "$GITHUB_PATH"
+
+      - name: Build gimoji-web (web profile)
+        working-directory: crates/gimoji-web
+        run: cargo build --profile web --locked
+
+      - name: Bundle with wasm-bindgen
+        run: |
+          mkdir -p web/dist
+          wasm-bindgen --target web --no-typescript \
+            --out-dir web/dist \
+            crates/gimoji-web/target/wasm32-unknown-unknown/web/gimoji_web.wasm
+
+      - name: Optimize with wasm-opt
+        run: |
+          wasm-opt -Oz \
+            --enable-bulk-memory \
+            --enable-nontrapping-float-to-int \
+            -o web/dist/gimoji_web_bg.wasm \
+            web/dist/gimoji_web_bg.wasm
+
+      - name: Copy HTML / CSS
+        run: |
+          cp crates/gimoji-web/web/index.html web/dist/
+          cp crates/gimoji-web/web/style.css  web/dist/
+
+      - name: Report bundle sizes
+        run: |
+          ls -lh web/dist/
+          echo '--- compressed sizes ---'
+          gzip -k web/dist/*.wasm
+          du -bh web/dist/*
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web/dist
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: 'Deploy gimoji-web'
