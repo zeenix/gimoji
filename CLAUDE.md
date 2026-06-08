@@ -11,21 +11,24 @@ same picker is also deployed to GitHub Pages.
 
 ## Development Commands
 
-Native commands run from the repo root and use the workspace `Cargo.lock`.
-WASM commands run from `crates/gimoji-web/` and pick up
-`wasm32-unknown-unknown` automatically via
-`crates/gimoji-web/.cargo/config.toml`.
+Prefer `just <recipe>` from the project root — it hides the native/wasm split.
+Run `just` with no args for the full list.
 
-- **Build native**: `cargo build`
-- **Run native**: `cargo run` (or `cargo run -- --help` for args)
-- **Test native**: `cargo test`
-- **Install native locally**: `cargo install --path crates/gimoji`
-- **Format**: `cargo fmt --all` (and again in `crates/gimoji-web/`)
-- **Lint native**: `cargo clippy --all-targets -- -D warnings`
-- **Lint wasm**: `(cd crates/gimoji-web && cargo clippy --all-targets -- -D warnings)`
-- **Build WASM (debug)**: `(cd crates/gimoji-web && cargo build)`
-- **Build WASM (size-optimised)**: `(cd crates/gimoji-web && cargo build --profile web)`
-- **Serve WASM locally**: `./scripts/serve-web.sh` (builds + bundles + http.server on :8000)
+- **Build native**: `just build`
+- **Run native**: `just run` (or `just run -- --help` for args)
+- **Test native**: `just test`
+- **Install native locally**: `just install`
+- **Format**: `just fmt` (rewrites) or `just fmt-check` (CI parity)
+- **Lint**: `just lint` (clippy native + wasm with `-D warnings`)
+- **Build WASM (debug)**: `just web-build`
+- **Build WASM (size-optimised)**: `just web-release`
+- **Serve WASM locally**: `just web-serve` (default port 8000)
+
+Raw cargo also works:
+
+- Native commands run from the repo root use the workspace `Cargo.lock`.
+- WASM commands run from `crates/gimoji-web/` and pick up
+  `wasm32-unknown-unknown` automatically via `crates/gimoji-web/.cargo/config.toml`.
 
 ## Architecture
 

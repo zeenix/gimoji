@@ -25,6 +25,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - uses: extractions/setup-just@v3
+
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli --version 0.2.122 --locked
 
@@ -36,8 +38,7 @@ jobs:
           echo "${PWD}/binaryen-version_${BIN_VER}/bin" >> "$GITHUB_PATH"
 
       - name: Build gimoji-web (web profile)
-        working-directory: crates/gimoji-web
-        run: cargo build --profile web --locked
+        run: just web-release
 
       - name: Bundle with wasm-bindgen
         run: |
