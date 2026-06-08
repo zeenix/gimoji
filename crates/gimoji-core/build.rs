@@ -10,7 +10,7 @@ use databake::Bake;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Bake)]
-#[databake(path = gimoji::emoji)]
+#[databake(path = gimoji_core::emoji)]
 pub struct Emoji<'e> {
     pub code: &'e str,
     pub description: &'e str,
@@ -26,6 +26,7 @@ pub struct Emojis<'e> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    println!("cargo:rerun-if-changed=emojis.json");
     let path = PathBuf::from(EMOJI_FILE);
     let emojis_json = read_to_string(path)?;
     let emojis: Emojis = serde_json::from_str(&emojis_json)?;

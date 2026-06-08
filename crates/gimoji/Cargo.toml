@@ -1,0 +1,23 @@
+[package]
+name = "gimoji"
+description = "Easily add emojis to your git commit messages 🎉"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+keywords = ["CLI", "git", "emoji"]
+categories = ["development-tools"]
+
+[dependencies]
+gimoji-core = { version = "1.4.0", path = "../gimoji-core" }
+clap = { version = "4.5.4", features = ["derive"] }
+crossterm = { version = "0.29.0", features = ["use-dev-tty"] }
+ratatui = "0.30.1"
+arboard = { version = "3.4.0", default-features = false, features = [
+    "wayland-data-control",
+] }
+terminal-light = "1.4.0"
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.31", default-features = false, features = ["process"] }

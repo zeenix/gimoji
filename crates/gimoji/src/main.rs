@@ -1,17 +1,10 @@
-extern crate self as gimoji;
-
-mod colors;
-mod emoji;
-mod search_entry;
-mod selection_view;
 mod terminal;
 
 use arboard::Clipboard;
 use clap::{Parser, ValueEnum};
-use colors::Colors;
 use crossterm::event::{read, Event, KeyCode, KeyModifiers};
+use gimoji_core::{Colors, SearchEntry, SelectionView, EMOJIS};
 use ratatui::layout::{Constraint, Layout};
-use selection_view::SelectionView;
 use std::{
     error::Error,
     fs::{File, OpenOptions},
@@ -21,7 +14,6 @@ use std::{
 #[cfg(unix)]
 use std::{fs::Permissions, os::unix::prelude::PermissionsExt};
 
-use search_entry::SearchEntry;
 use terminal::Terminal;
 
 /// Select emoji for git commit message.
@@ -79,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         reader.read_line(&mut content)?;
         let content = if !content.is_empty() {
             // FIXME: There has to be a faster way to detect an emoji.
-            for emoji in emoji::EMOJIS {
+            for emoji in EMOJIS {
                 if content.contains(emoji.emoji()) || content.contains(emoji.code()) {
                     // The commit shortlog already contains an emoji.
                     return Ok(());
@@ -123,11 +115,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn select_emoji(colors: Colors, use_stderr: bool) -> Result<Option<String>, Box<dyn Error>> {
-    let emojis = &emoji::EMOJIS;
-
     let mut terminal = Terminal::setup(use_stderr)?;
     let mut search_entry = SearchEntry::new(&colors);
-    let mut selection_view = SelectionView::new(emojis, &colors);
+    let mut selection_view = SelectionView::new(EMOJIS, &colors);
 
     let selected = loop {
         let search_text = search_entry.text();
