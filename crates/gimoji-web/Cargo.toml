@@ -15,6 +15,14 @@ crate-type = ["cdylib", "rlib"]
 lto = "fat"
 codegen-units = 1
 
+# Size-optimized profile for the WebAssembly bundle.
+# Use with `--profile web`.
+[profile.web]
+inherits = "release"
+opt-level = "z"
+strip = true
+panic = "abort"
+
 [dependencies]
 gimoji-core = { version = "1.4.0", path = "../gimoji-core" }
 ratatui = { version = "0.30.1", default-features = false }
