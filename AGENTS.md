@@ -53,3 +53,9 @@ array, eliminating runtime JSON parsing and network dependencies.
 2. **Git hook**: `gimoji --hook <commit-file>` - prepends emoji to commit message
 3. **Initialize**: `gimoji --init` - installs git prepare-commit-msg hook
 4. **Stdout**: `gimoji --stdout` - outputs selection to stdout instead of clipboard
+
+## Commit Conventions
+
+- **Changelog-skip trailer**: end a commit message with a `Changelog: skip` git trailer to
+  keep it out of the user-facing changelog (use for AI-workflow artifacts such as design docs
+  and implementation plans).
