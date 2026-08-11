@@ -9,29 +9,64 @@ more — follow the guidelines in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 ## Project Overview
 
 Gimoji is a Rust CLI tool for adding emojis to git commit messages. It provides a terminal UI for
-emoji selection and integrates with git as a prepare-commit-msg hook.
+emoji selection and integrates with git as a prepare-commit-msg hook. A WebAssembly build of the
+same picker is also deployed to GitHub Pages.
 
 ## Development Commands
 
-- **Build**: `cargo build` or `cargo build --release`
-- **Run**: `cargo run` (launches emoji picker UI)
-- **Run with args**: `cargo run -- --help` (see all options)
-- **Test**: `cargo test`
-- **Install locally**: `cargo install --path .`
-- **Format code**: `cargo fmt`
-- **Lint**: `cargo clippy`
+Prefer `just <recipe>` from the project root — it hides the native/wasm split.
+Run `just` with no args for the full list.
+
+- **Build native**: `just build`
+- **Run native**: `just run` (or `just run -- --help` for args)
+- **Test native**: `just test`
+- **Install native locally**: `just install`
+- **Format**: `just fmt` (rewrites) or `just fmt-check` (CI parity)
+- **Lint**: `just lint` (clippy native + wasm with `-D warnings`)
+- **Build WASM (debug)**: `just web-build`
+- **Build WASM (size-optimised)**: `just web-release`
+- **Serve WASM locally**: `just web-serve` (default port 8000)
+
+Raw cargo also works:
+
+- Native commands run from the repo root use the workspace `Cargo.lock`.
+- WASM commands run from `crates/gimoji-web/` and pick up
+  `wasm32-unknown-unknown` automatically via `crates/gimoji-web/.cargo/config.toml`.
 
 ## Architecture
 
-### Core Components
+### Repository Layout
 
-- **main.rs**: Entry point with CLI argument parsing, hook installation, and main application flow
-- **emoji.rs**: Emoji data structure and search functionality. Contains pre-compiled emoji database
-  from emojis.json
-- **terminal.rs**: Terminal setup and management using crossterm/ratatui
-- **selection_view.rs**: Grid-based emoji selection UI component
-- **search_entry.rs**: Text search input component with filtering
-- **colors.rs**: Color scheme definitions for light/dark terminal themes
+Two cargo roots, both checked into the same repo:
+
+- **Native workspace** (`Cargo.toml` at the repo root) — members:
+  - **`crates/gimoji-core`** (library, published): the picker state machine
+    (`App`, `Action`, `Outcome`), emoji database (`EMOJIS`), color palettes,
+    ratatui widgets (`SearchEntry`, `SelectionView`, `Toast`), and the
+    `Clipboard` trait the native CLI implements (the web frontend handles
+    the async clipboard outcome itself).
+  - **`crates/gimoji`** (binary, published, name unchanged): the native CLI
+    that wires `crossterm` + `arboard` into the `App`. Entry point:
+    `crates/gimoji/src/main.rs`.
+- **Standalone wasm package** (`crates/gimoji-web/Cargo.toml`, its own
+  `Cargo.lock`): cdylib that renders the picker into a single `<canvas>`
+  through a hand-rolled Canvas-2D ratatui backend
+  (`crates/gimoji-web/src/canvas_backend.rs`). Entry point:
+  `crates/gimoji-web/src/lib.rs`. No bundled fonts — the canvas font stack
+  names the system monospace and colour-emoji families and lets the browser
+  fall back per codepoint. Emoji glyphs are painted in a separate overlay
+  pass so VS16 / ZWJ sequences can't skew `unicode-width`-based column
+  accounting. Depends on `gimoji-core` via path; excluded from the root
+  workspace because its dep tree (`web-sys`, `wasm-bindgen`) only compiles
+  for `wasm32-unknown-unknown`.
+
+### Picker behaviour
+
+The picker is a single `App::handle(Action) -> Outcome` state machine in
+`gimoji-core`. Backends produce `Action`s from their input source
+(crossterm `KeyEvent` for native, DOM `KeyboardEvent`/`PointerEvent` for
+web) and interpret `Outcome::Picked(s)` according to the frontend
+semantics (native copies-then-exits; web copies-and-toasts).
 
 ### Key Features
 
@@ -44,8 +79,8 @@ emoji selection and integrates with git as a prepare-commit-msg hook.
 
 ### Build Process
 
-The build.rs script processes emojis.json at compile time using databake to generate a static EMOJIS
-array, eliminating runtime JSON parsing and network dependencies.
+The `crates/gimoji-core/build.rs` script processes `emojis.json` at compile time using databake to
+generate a static `EMOJIS` array, eliminating runtime JSON parsing and network dependencies.
 
 ### Usage Modes
 
@@ -53,9 +88,3 @@ array, eliminating runtime JSON parsing and network dependencies.
 2. **Git hook**: `gimoji --hook <commit-file>` - prepends emoji to commit message
 3. **Initialize**: `gimoji --init` - installs git prepare-commit-msg hook
 4. **Stdout**: `gimoji --stdout` - outputs selection to stdout instead of clipboard
-
-## Commit Conventions
-
-- **Changelog-skip trailer**: end a commit message with a `Changelog: skip` git trailer to
-  keep it out of the user-facing changelog (use for AI-workflow artifacts such as design docs
-  and implementation plans).
