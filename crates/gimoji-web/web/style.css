@@ -1,0 +1,44 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0e0e0e;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  html, body {
+    background: #f5f5f5;
+    color-scheme: light;
+  }
+}
+/* Centre the canvas on the viewport when the cap kicks in. */
+body {
+  display: grid;
+  place-content: center;
+}
+/* The canvas the picker paints into (see src/canvas_backend.rs). The
+   backend reads `getBoundingClientRect()` to size its grid in cells, so
+   any width/height cap applied here flows through. The picker itself is
+   visually centred inside the grid via `App::render_in_area` (see
+   lib.rs); the surrounding cells stay transparent so the page background
+   shows through. */
+#gimoji-canvas {
+  display: block;
+  /* Cap the picker box so the backend only allocates ~110 x 36 cells
+     instead of one per (window/cell-size). On large monitors this keeps
+     both the cell-shadow buffer and the drawing buffer bounded. The
+     `min(100vw, …)` form lets small viewports use the full screen. */
+  width: min(100vw, 1100px);
+  height: min(100vh, 720px);
+}
+#fallback {
+  color: #ddd;
+  font-family: system-ui, sans-serif;
+  padding: 1rem;
+}
+@media (prefers-color-scheme: light) {
+  #fallback {
+    color: #333;
+  }
+}

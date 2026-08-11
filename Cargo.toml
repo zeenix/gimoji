@@ -1,7 +1,8 @@
 [workspace]
 members = ["crates/gimoji-core", "crates/gimoji"]
 resolver = "2"
-exclude = ["scripts"]
+# `gimoji-web` is a wasm-only standalone package with its own Cargo.lock.
+exclude = ["scripts", "crates/gimoji-web"]
 
 [workspace.package]
 version = "1.4.0"

@@ -7,7 +7,7 @@ pub mod search_entry;
 pub mod selection_view;
 pub mod toast;
 
-pub use app::{Action, App, Clipboard, Outcome};
+pub use app::{Action, App, Clipboard, Outcome, VisibleEmoji};
 pub use colors::Colors;
 pub use emoji::{Emoji, EMOJIS};
 pub use search_entry::SearchEntry;

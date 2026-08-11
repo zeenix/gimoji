@@ -1,0 +1,63 @@
+[package]
+name = "gimoji-web"
+description = "Browser frontend for the gimoji emoji picker (WASM)"
+version = "1.4.0"
+edition = "2021"
+license = "MIT"
+authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]
+repository = "https://github.com/zeenix/gimoji"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
+# Size-optimized profile for the WebAssembly bundle.
+# Use with `--profile web`.
+[profile.web]
+inherits = "release"
+opt-level = "z"
+strip = true
+panic = "abort"
+
+# Picker rendering goes through a small custom Canvas 2D backend (see
+# `src/canvas_backend.rs`) instead of pulling in a third-party crate. We
+# tried both `ratzilla` 0.3.x and a per-cell DOM backend; the third-party
+# crate had bugs we couldn't work around externally, and the per-cell DOM
+# approach grew the tab's resident memory into hundreds of MB during
+# active scrolling because every redraw churned `<span>` style strings on
+# the wasm heap (which never shrinks). The canvas backend bounds the DOM
+# at one element and emits paint calls instead of strings.
+[dependencies]
+gimoji-core = { version = "1.4.0", path = "../gimoji-core" }
+ratatui = { version = "0.30.1", default-features = false }
+wasm-bindgen = "0.2.122"
+wasm-bindgen-futures = "0.4.45"
+js-sys = "0.3.72"
+unicode-width = "0.2"
+web-sys = { version = "0.3.72", features = [
+    "Window",
+    "Document",
+    "HtmlElement",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
+    "TextMetrics",
+    "Element",
+    "Node",
+    "KeyboardEvent",
+    "PointerEvent",
+    "MediaQueryList",
+    "MediaQueryListEvent",
+    "Navigator",
+    "Clipboard",
+    "Performance",
+    "EventTarget",
+    "Event",
+    "DomRect",
+    "console",
+] }
+console_error_panic_hook = "0.1.7"
+

@@ -1,3 +1,5 @@
 /target
+crates/gimoji-web/target/
 .vscode
 node_modules
+crates/gimoji-web/web/dist/
