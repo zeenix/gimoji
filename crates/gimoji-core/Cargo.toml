@@ -6,6 +6,9 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
+readme = "../../README.md"
+keywords = ["emoji", "git", "gitmoji", "tui", "picker"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 ratatui = { version = "0.30.1", default-features = false }
