@@ -201,6 +201,17 @@ mod tests {
     }
 
     #[test]
+    fn arrow_keys_with_no_matches_return_continue() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        for c in "zzzzzzzz_no_match_zzzzzz".chars() {
+            app.handle(Action::Append(c));
+        }
+        assert_eq!(app.handle(Action::MoveDown), Outcome::Continue);
+        assert_eq!(app.handle(Action::MoveUp), Outcome::Continue);
+    }
+
+    #[test]
     fn cancel_returns_cancelled() {
         let (emojis, colors) = fixture();
         let mut app = App::new(emojis, &colors);

@@ -66,16 +66,29 @@ impl FilteredView<'_, '_> {
         self.emojis.get(self.state.selected()?).copied()
     }
 
+    /// Move the selection one row up, wrapping to the last row. A no-op when
+    /// the filter matched nothing: there is no selection to move and no last
+    /// row to wrap onto.
     pub fn move_up(&mut self) {
-        let i = self.state.selected().unwrap();
-        let i = if i == 0 { self.emojis.len() - 1 } else { i - 1 };
-        self.state.select(Some(i));
+        let Some(i) = self.state.selected() else {
+            return;
+        };
+        let Some(last) = self.emojis.len().checked_sub(1) else {
+            return;
+        };
+        self.state.select(Some(if i == 0 { last } else { i - 1 }));
     }
 
+    /// Move the selection one row down, wrapping to the first row. A no-op
+    /// when the filter matched nothing — see [`Self::move_up`].
     pub fn move_down(&mut self) {
-        let i = self.state.selected().unwrap();
-        let i = if i == self.emojis.len() - 1 { 0 } else { i + 1 };
-        self.state.select(Some(i));
+        let Some(i) = self.state.selected() else {
+            return;
+        };
+        let Some(last) = self.emojis.len().checked_sub(1) else {
+            return;
+        };
+        self.state.select(Some(if i == last { 0 } else { i + 1 }));
     }
 }
 
