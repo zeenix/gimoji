@@ -2,27 +2,23 @@
 
 This directory contains utility scripts for maintaining the Gimoji project.
 
-## generate-web.sh
+## serve-web.sh
 
-A shell script that generates the Gimoji website. This script is used by the GitHub Actions
-workflow.
+Builds the `gimoji-web` WASM crate, bundles it with `wasm-bindgen`, runs `wasm-opt -Oz` when
+binaryen is installed, and serves the result at <http://localhost:8000>.
 
 ### Usage
 
 ```bash
 # Run from the project root directory
-./scripts/generate-web.sh
+./scripts/serve-web.sh           # serves on port 8000
+./scripts/serve-web.sh 4200      # serves on the specified port
 ```
 
-### Local Testing
-
-After running the script, test the website locally:
-
-```bash
-cd website
-python3 -m http.server 8000
-# Then open http://localhost:8000 in your browser
-```
+The script installs the `wasm32-unknown-unknown` Rust target and a matching `wasm-bindgen-cli`
+version automatically on first run. `wasm-opt` is optional (the bundle will be larger without
+it but still functional). The generated bundle lives at `crates/gimoji-web/web/dist/`, which is
+gitignored.
 
 ## update-emojis
 

@@ -1,3 +1,8 @@
 /target
+crates/gimoji-web/target/
 .vscode
 node_modules
+crates/gimoji-web/web/dist/
+# Output of the deploy workflow's wasm-bindgen step when run locally
+# (CI creates this fresh; locals use crates/gimoji-web/web/dist instead).
+/web/

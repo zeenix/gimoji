@@ -7,6 +7,19 @@
 A CLI tool that makes it easy to add emojis to your git commit messages. It's very similar to (and
 is based on) [gitmoji-cli] but written in Rust.
 
+## Try in your browser
+
+A WebAssembly build of the same picker is hosted at
+<https://zeenix.github.io/gimoji/>. It runs entirely in the browser, with no
+server roundtrip; clicking or pressing Enter on a row copies the selected
+emoji to your clipboard.
+
+To run it locally during development:
+
+```bash
+./scripts/serve-web.sh   # builds, bundles, and serves at http://localhost:8000
+```
+
 ## Installation
 
 ### Fedora (>= 37)

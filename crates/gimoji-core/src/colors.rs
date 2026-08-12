@@ -7,7 +7,7 @@ pub struct Colors {
 }
 
 impl Colors {
-    pub fn light() -> Self {
+    pub const fn light() -> Self {
         Self {
             selected: Color::Green,
             unselected: Color::DarkGray,
@@ -15,7 +15,7 @@ impl Colors {
         }
     }
 
-    pub fn dark() -> Self {
+    pub const fn dark() -> Self {
         Self {
             selected: Color::Green,
             unselected: Color::White,

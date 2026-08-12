@@ -14,7 +14,7 @@ use clap::Parser;
 use serde::{Deserialize, Serialize};
 
 const UPSTREAM_URL: &str = "https://raw.githubusercontent.com/carloscuesta/gitmoji/refs/heads/master/packages/gitmojis/src/gitmojis.json";
-const EMOJIS_FILE: &str = "../emojis.json";
+const EMOJIS_FILE: &str = "../crates/gimoji-core/emojis.json";
 
 #[derive(Parser)]
 #[command(name = "update-emojis")]

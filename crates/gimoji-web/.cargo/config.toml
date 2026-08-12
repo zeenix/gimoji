@@ -1,0 +1,5 @@
+# `gimoji-web` only targets the browser. Setting the default build target
+# means `cargo build` / `cargo clippy` / etc. from this directory work
+# without a `--target` flag.
+[build]
+target = "wasm32-unknown-unknown"
