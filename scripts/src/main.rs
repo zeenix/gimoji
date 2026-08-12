@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 
 const UPSTREAM_URL: &str = "https://raw.githubusercontent.com/carloscuesta/gitmoji/refs/heads/master/packages/gitmojis/src/gitmojis.json";
 const EMOJIS_FILE: &str = "../crates/gimoji-core/emojis.json";
+// Kept in lockstep with EMOJIS_FILE: the root copy's raw GitHub URL is a
+// public contract fetched by published commitlint-plugin-gimoji versions.
+const ROOT_EMOJIS_FILE: &str = "../emojis.json";
 
 #[derive(Parser)]
 #[command(name = "update-emojis")]
@@ -168,6 +171,7 @@ fn update_database(
 
     if has_changes {
         fs::write(EMOJIS_FILE, &new_content)?;
+        fs::write(ROOT_EMOJIS_FILE, &new_content)?;
         println!("✅ Database updated successfully!");
     } else {
         println!("ℹ️  No changes detected - database is already up to date!");

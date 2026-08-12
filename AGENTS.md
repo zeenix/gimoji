@@ -37,6 +37,13 @@ Raw cargo also works:
 
 ### Repository Layout
 
+The `emojis.json` at the repo root is a public contract: published
+`commitlint-plugin-gimoji` versions fetch it from main's raw GitHub URL, so
+it must never move. It is a byte-identical copy of
+`crates/gimoji-core/emojis.json` (the crate-local copy `cargo publish`
+needs); `gimoji-core`'s build script fails the build if the two drift, and
+the emoji-update tool rewrites both.
+
 Two cargo roots, both checked into the same repo:
 
 - **Native workspace** (`Cargo.toml` at the repo root) — members:
