@@ -1,6 +1,6 @@
 {
   "name": "@gimoji/commitlint-config-gimoji",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.mjs",
   "type": "module",
   "repository": {
@@ -24,7 +24,7 @@
   },
   "peerDependencies": {
     "@commitlint/lint": ">=7.6.0",
-    "@gimoji/commitlint-plugin-gimoji": "0.1.0"
+    "@gimoji/commitlint-plugin-gimoji": "^0.1.0"
   },
   "files": [
     "index.mjs"
