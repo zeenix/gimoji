@@ -5,7 +5,6 @@ resolver = "2"
 exclude = ["scripts", "crates/gimoji-web"]
 
 [workspace.package]
-version = "1.4.0"
 edition = "2021"
 license = "MIT"
 authors = ["Zeeshan Ali Khan <zeeshanak@gnome.org>"]

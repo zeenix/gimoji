@@ -12,14 +12,30 @@ git_tag_enable = true
 publish = true
 # We're not a library.
 semver_check = false
- 
+
 # Bump minor version for non-bugfix commits.
 custom_minor_increment_regex = """\
 ^(🎨|⚡️|🔥|✨|💄|🎉|🔒️|⬇️|⬆️|📌|➕|➖|🔧|👽️|💥|♿️|💬|🔊|🔇|🚸|🏗️|🗑️)\
 """
 
-# PR configuration.
-pr_name = "🔖 Release {{ version }}"
+# PR configuration. `version` is only available when the released packages
+# all share one version, so fall back to a bare title once they diverge.
+pr_name = "🔖 Release{% if version %} {{ version }}{% endif %}"
+
+# The crates are versioned and released independently. The user-facing
+# `gimoji` binary keeps the historical bare "{{ version }}" tags and owns the
+# GitHub releases; `gimoji-core` gets package-prefixed tags and no GitHub
+# release of its own.
+[[package]]
+name = "gimoji"
+# Fold gimoji-core's commits into the binary's changelog so the release notes
+# cover the whole picker.
+changelog_include = ["gimoji-core"]
+
+[[package]]
+name = "gimoji-core"
+git_tag_name = "gimoji-core-{{ version }}"
+git_release_enable = false
 
 # Changelog configuration for gimoji-based commits.
 # See: https://zeenix.github.io/gimoji/
