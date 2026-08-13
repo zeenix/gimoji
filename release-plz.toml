@@ -2,9 +2,10 @@
 # https://release-plz.dev/docs/config
 
 [workspace]
-# Use the existing tag naming convention without 'v' prefix.
+# Use the existing tag naming convention without 'v' prefix. Release names
+# are freeform and human-readable, unlike the tags.
 git_tag_name = "{{ version }}"
-git_release_name = "{{ version }}"
+git_release_name = "{{ package }} {{ version }}"
 
 # Enable all release features.
 git_release_enable = true
@@ -23,9 +24,8 @@ custom_minor_increment_regex = """\
 pr_name = "🔖 Release{% if version %} {{ version }}{% endif %}"
 
 # The crates are versioned and released independently. The user-facing
-# `gimoji` binary keeps the historical bare "{{ version }}" tags and owns the
-# GitHub releases; `gimoji-core` gets package-prefixed tags and no GitHub
-# release of its own.
+# `gimoji` binary keeps the historical bare "{{ version }}" tags and GitHub
+# releases; `gimoji-core` gets package-prefixed ones.
 [[package]]
 name = "gimoji"
 # Fold gimoji-core's commits into the binary's changelog so the release notes
@@ -35,7 +35,6 @@ changelog_include = ["gimoji-core"]
 [[package]]
 name = "gimoji-core"
 git_tag_name = "gimoji-core-{{ version }}"
-git_release_enable = false
 
 # Changelog configuration for gimoji-based commits.
 # See: https://zeenix.github.io/gimoji/
