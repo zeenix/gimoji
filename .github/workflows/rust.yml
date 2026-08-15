@@ -21,7 +21,7 @@ jobs:
           toolchain: stable
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - name: Check build
         # `just check` runs `cargo --locked check` (the workspace excludes
         # gimoji-web, so this only covers the native crates).
@@ -43,7 +43,7 @@ jobs:
           targets: wasm32-unknown-unknown
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
       - name: Check formatting
         run: just fmt-check
       - name: Clippy (native + wasm)
