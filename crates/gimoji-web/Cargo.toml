@@ -32,7 +32,11 @@ panic = "abort"
 # the wasm heap (which never shrinks). The canvas backend bounds the DOM
 # at one element and emits paint calls instead of strings.
 [dependencies]
-gimoji-core = { version = "1.4.0", path = "../gimoji-core" }
+# No version requirement: this package is excluded from the root workspace, so
+# release-plz doesn't rewrite the requirement when it bumps gimoji-core, and a
+# stale one stops the wasm build from resolving the path dependency at all.
+# `publish = false` above means the requirement buys us nothing anyway.
+gimoji-core = { path = "../gimoji-core" }
 ratatui = { version = "0.30.1", default-features = false }
 wasm-bindgen = "0.2.122"
 wasm-bindgen-futures = "0.4.45"
