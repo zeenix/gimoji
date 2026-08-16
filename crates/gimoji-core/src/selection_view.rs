@@ -124,6 +124,29 @@ impl<'s> FilteredView<'s, '_> {
         };
         self.state.select(Some(if i == last { 0 } else { i + 1 }));
     }
+
+    /// Scroll the visible window by `delta` rows, positive towards the end
+    /// of the list. Unlike [`Self::move_down`] this clamps instead of
+    /// wrapping: a drag that runs past either end should stop there.
+    ///
+    /// `viewport_rows` is how many rows the list last rendered into. The
+    /// selection is dragged along to stay inside the new window because the
+    /// table widget scrolls itself back to whatever is selected on the next
+    /// render, which would otherwise undo the scroll immediately.
+    pub fn scroll_by(&mut self, delta: i32, viewport_rows: usize) {
+        let Some(last) = self.emojis.len().checked_sub(1) else {
+            return;
+        };
+        let rows = viewport_rows.max(1);
+        let max_offset = self.emojis.len().saturating_sub(rows) as i64;
+        let offset = (self.state.offset() as i64 + delta as i64).clamp(0, max_offset) as usize;
+        *self.state.offset_mut() = offset;
+
+        if let Some(selected) = self.state.selected() {
+            let bottom = (offset + rows - 1).min(last);
+            self.state.select(Some(selected.clamp(offset, bottom)));
+        }
+    }
 }
 
 impl Widget for &mut FilteredView<'_, '_> {

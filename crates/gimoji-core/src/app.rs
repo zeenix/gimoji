@@ -13,13 +13,26 @@ use crate::{
     toast::Toast,
 };
 
+/// Something the user did, for [`App::handle`] to interpret.
+///
+/// Marked `#[non_exhaustive]`: new input sources keep needing new actions —
+/// this release adds two of them for pointer and touch input — and each one
+/// would otherwise break every downstream `match`. Callers need a catch-all
+/// arm.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Action {
     Append(char),
     Backspace,
+    /// Replace the search text wholesale — see [`SearchEntry::set_text`].
+    SetSearch(String),
     ClearSearch,
     MoveUp,
     MoveDown,
+    /// Scroll the list by a number of rows, positive towards the end of the
+    /// list. Clamps at both ends rather than wrapping, and carries the
+    /// selection along so it stays on screen.
+    Scroll(i32),
     PickFocused,
     PickAt(usize),
     Cancel,
@@ -42,6 +55,8 @@ pub struct App<'c> {
     last_row_offset: usize,
     last_visible_emojis: Vec<VisibleEmoji>,
     last_emoji_band: Option<Rect>,
+    last_search_area: Option<Rect>,
+    last_viewport_rows: usize,
 }
 
 /// One row of the picker as positioned during the last render.
@@ -83,6 +98,8 @@ impl<'c> App<'c> {
             last_row_offset: 0,
             last_visible_emojis: Vec::new(),
             last_emoji_band: None,
+            last_search_area: None,
+            last_viewport_rows: 0,
         }
     }
 
@@ -113,6 +130,10 @@ impl<'c> App<'c> {
                 self.search.delete_last();
                 Outcome::Continue
             }
+            Action::SetSearch(text) => {
+                self.search.set_text(text);
+                Outcome::Continue
+            }
             Action::ClearSearch => {
                 self.search.delete_all();
                 Outcome::Continue
@@ -125,6 +146,17 @@ impl<'c> App<'c> {
             Action::MoveUp => {
                 let mut view = self.selection.filtered_view(self.search.text());
                 view.move_up();
+                Outcome::Continue
+            }
+            Action::Scroll(delta) => {
+                // The viewport height comes from the last render, so a
+                // scroll arriving before the first one has no window to
+                // scroll within and would only drag the selection along.
+                let viewport_rows = self.last_viewport_rows;
+                if viewport_rows > 0 {
+                    let mut view = self.selection.filtered_view(self.search.text());
+                    view.scroll_by(delta, viewport_rows);
+                }
                 Outcome::Continue
             }
             Action::PickFocused => {
@@ -188,6 +220,7 @@ impl<'c> App<'c> {
             .split(area);
 
         frame.render_widget(&self.search, chunks[0]);
+        self.last_search_area = Some(chunks[0]);
 
         let list_area = chunks[1];
         let inner_left = list_area.x.saturating_add(2);
@@ -227,6 +260,7 @@ impl<'c> App<'c> {
 
         self.last_rendered_rows.clear();
         self.last_row_offset = row_offset;
+        self.last_viewport_rows = visible_h as usize;
         self.last_visible_emojis.clear();
         // Extend the band by one cell into the block's top padding row so
         // the external overlay catches any upward pixel bleed from the
@@ -279,6 +313,16 @@ impl<'c> App<'c> {
         Some(self.last_row_offset + visible_index)
     }
 
+    /// Cell rectangle the search box occupied in the last rendered frame,
+    /// or `None` before the first render.
+    ///
+    /// Pointer-driven frontends use it to tell a tap on the search box apart
+    /// from one on the list — the web build focuses its offscreen `<input>`
+    /// on the former, which is what raises a mobile on-screen keyboard.
+    pub fn search_area(&self) -> Option<Rect> {
+        self.last_search_area
+    }
+
     pub fn visible_emojis(&self) -> &[VisibleEmoji] {
         &self.last_visible_emojis
     }
@@ -303,9 +347,25 @@ pub trait Clipboard {
 mod tests {
     use super::*;
     use crate::{colors::Colors, emoji::Emoji};
+    use ratatui::{backend::TestBackend, Terminal};
 
     fn fixture() -> (&'static [Emoji], Colors) {
         (crate::emoji::EMOJIS, Colors::dark())
+    }
+
+    /// A terminal small enough that the list scrolls: far fewer rows fit
+    /// than the emoji database has.
+    fn terminal() -> Terminal<TestBackend> {
+        Terminal::new(TestBackend::new(60, 20)).unwrap()
+    }
+
+    /// Render and hand back the emoji on the list's first visible row.
+    fn top_row(app: &mut App<'_>, terminal: &mut Terminal<TestBackend>) -> &'static str {
+        terminal.draw(|frame| app.render(frame)).unwrap();
+        app.visible_emojis()
+            .first()
+            .expect("the picker rendered at least one row")
+            .emoji
     }
 
     #[test]
@@ -325,6 +385,18 @@ mod tests {
         app.handle(Action::Append('b'));
         app.handle(Action::Backspace);
         assert_eq!(app.search_text(), "a");
+    }
+
+    #[test]
+    fn set_search_replaces_the_whole_text() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        app.handle(Action::Append('a'));
+        assert_eq!(
+            app.handle(Action::SetSearch("fix".into())),
+            Outcome::Continue
+        );
+        assert_eq!(app.search_text(), "fix");
     }
 
     #[test]
@@ -443,6 +515,75 @@ mod tests {
     }
 
     #[test]
+    fn scroll_moves_the_visible_window_and_clamps_at_both_ends() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        let mut terminal = terminal();
+        assert_eq!(top_row(&mut app, &mut terminal), emojis[0].emoji());
+
+        app.handle(Action::Scroll(5));
+        assert_eq!(top_row(&mut app, &mut terminal), emojis[5].emoji());
+
+        // Scrolling past the top stops there rather than wrapping around,
+        // which is what a drag or a wheel flick should do.
+        app.handle(Action::Scroll(-100));
+        assert_eq!(top_row(&mut app, &mut terminal), emojis[0].emoji());
+
+        // Same at the far end: the last screenful is as far as it goes.
+        app.handle(Action::Scroll(i32::MAX));
+        let bottom = top_row(&mut app, &mut terminal);
+        assert_ne!(bottom, emojis[0].emoji());
+        app.handle(Action::Scroll(1));
+        assert_eq!(top_row(&mut app, &mut terminal), bottom);
+    }
+
+    #[test]
+    fn scroll_keeps_the_selection_on_screen() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        let mut terminal = terminal();
+        top_row(&mut app, &mut terminal);
+
+        // The table widget scrolls itself back to the selected row, so a
+        // scroll that left the selection behind would be undone on the very
+        // next render.
+        app.handle(Action::Scroll(20));
+        top_row(&mut app, &mut terminal);
+
+        let Outcome::Picked(focused) = app.handle(Action::PickFocused) else {
+            panic!("the picker has a selection");
+        };
+        assert!(app.visible_emojis().iter().any(|ve| ve.emoji == focused));
+    }
+
+    #[test]
+    fn scroll_before_first_render_is_a_no_op() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        assert_eq!(app.handle(Action::Scroll(5)), Outcome::Continue);
+        assert_eq!(
+            app.handle(Action::PickFocused),
+            Outcome::Picked(emojis[0].emoji().to_string())
+        );
+    }
+
+    #[test]
+    fn search_area_covers_the_box_above_the_list() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        assert!(app.search_area().is_none());
+
+        let mut terminal = terminal();
+        top_row(&mut app, &mut terminal);
+
+        let search = app.search_area().expect("the picker rendered");
+        // A tap in the search box must not also land on a list row.
+        assert!(app.hit_test(search.x, search.y).is_none());
+        let first = app.visible_emojis().first().expect("at least one row").cell;
+        assert!(first.y >= search.y + search.height);
+    }
+
+    #[test]
     fn hit_test_returns_none_before_first_render() {
         let (emojis, colors) = fixture();
         let app = App::new(emojis, &colors);
@@ -451,11 +592,9 @@ mod tests {
 
     #[test]
     fn hit_test_maps_a_scrolled_row_to_its_filtered_index() {
-        use ratatui::{backend::TestBackend, Terminal};
-
         let (emojis, colors) = fixture();
         let mut app = App::new(emojis, &colors);
-        let mut terminal = Terminal::new(TestBackend::new(60, 20)).unwrap();
+        let mut terminal = terminal();
         // Fewer rows fit than we move down by, so the table scrolls and the
         // first visible row is no longer the first emoji.
         for _ in 0..15 {

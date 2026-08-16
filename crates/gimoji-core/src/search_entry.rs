@@ -26,6 +26,16 @@ impl<'c> SearchEntry<'c> {
         self.text.as_ref()
     }
 
+    /// Replace the whole text at once.
+    ///
+    /// Frontends that mirror a host-owned editor (e.g. the web build's
+    /// offscreen `<input>`, which is what raises a mobile on-screen
+    /// keyboard) can't express every edit as append/delete: autocorrect,
+    /// paste and IME composition all rewrite arbitrary spans.
+    pub fn set_text(&mut self, text: impl Into<String>) {
+        self.text = text.into();
+    }
+
     pub fn append(&mut self, c: char) {
         self.text.push(c);
     }
