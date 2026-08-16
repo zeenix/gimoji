@@ -8,6 +8,13 @@
 </head>
 <body>
   <canvas id="gimoji-canvas"></canvas>
+  <!-- The picker paints into a canvas, which can't take focus or raise a
+       mobile on-screen keyboard. This offscreen input does both: tapping the
+       picker's search box focuses it (see src/lib.rs), and its `input`
+       events are what the search text is built from. -->
+  <input id="gimoji-input" type="text" aria-label="Search an emoji"
+         autocomplete="off" autocorrect="off" autocapitalize="none"
+         spellcheck="false" enterkeyhint="go">
   <div id="fallback" hidden>
     Your browser doesn't support the gimoji picker.
     See <a href="https://github.com/zeenix/gimoji">the GitHub repository</a> for the CLI version.
