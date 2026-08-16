@@ -2,9 +2,16 @@ use std::{cell::RefCell, rc::Rc};
 
 use canvas_backend::CanvasBackend;
 use gimoji_core::{Action, App, Outcome, EMOJIS};
-use ratatui::{layout::Rect, Terminal};
+use ratatui::{
+    layout::{Position, Rect},
+    Terminal,
+};
+use text_input::TextInput;
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{KeyboardEvent, PointerEvent};
+use web_sys::{
+    AddEventListenerOptions, CssStyleDeclaration, Document, HtmlElement, KeyboardEvent,
+    PointerEvent, VisualViewport, WheelEvent,
+};
 
 /// Maximum picker dimensions in cells. The canvas fills its container, so
 /// the picker is centred inside it via `App::render_in_area` and the
@@ -17,10 +24,15 @@ mod canvas_backend;
 mod clipboard;
 mod color_scheme;
 mod input;
+mod text_input;
 
 /// The element id of the `<canvas>` the picker paints into. Matches the
 /// markup in `web/index.html`.
 const CANVAS_ID: &str = "gimoji-canvas";
+
+/// The element id of the offscreen `<input>` that owns text entry. Also
+/// from `web/index.html`; see [`text_input`] for why it exists.
+const INPUT_ID: &str = "gimoji-input";
 
 /// Cadence of the toast countdown driver. The toast lifetime is measured in
 /// seconds, so 250 ms is fine-grained enough that expiry feels snappy without
@@ -32,9 +44,21 @@ const COPIED_PREFIX: &str = "Copied";
 /// Toast prefix for one it refused.
 const COPY_FAILED_PREFIX: &str = "Copy failed";
 
+/// How far a pointer may travel and still count as a tap rather than a
+/// scroll. Roughly the slop a browser itself allows before turning a touch
+/// into a pan: tight enough that a deliberate tap picks, loose enough that
+/// a finger resting on a row doesn't pick something else on the way up.
+const TAP_SLOP_PX: f64 = 8.0;
+
+/// Rows a `DOM_DELTA_PAGE` wheel notch scrolls. Those arrive without a
+/// pixel measurement to convert, so this stands in for "a screenful" —
+/// close to the list height on a typical viewport.
+const WHEEL_PAGE_ROWS: f64 = 20.0;
+
 struct State {
     app: App<'static>,
     clipboard: clipboard::WebClipboard,
+    text_input: TextInput,
     last_perf_ms: f64,
 }
 
@@ -43,6 +67,9 @@ pub fn run() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
 
     let window = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
+    let document = window
+        .document()
+        .ok_or_else(|| JsValue::from_str("no document"))?;
     let performance = window
         .performance()
         .ok_or_else(|| JsValue::from_str("no performance"))?;
@@ -60,21 +87,52 @@ pub fn run() -> Result<(), JsValue> {
     let terminal =
         Terminal::new(backend).map_err(|e| JsValue::from_str(&format!("terminal init: {e}")))?;
 
+    let text_input = TextInput::new(&document, INPUT_ID)
+        .map_err(|e| JsValue::from_str(&format!("text input init failed: {e}")))?;
+
     let state = Rc::new(RefCell::new(State {
         app,
         clipboard: clipboard::WebClipboard,
+        text_input,
         last_perf_ms: performance.now(),
     }));
     let terminal = Rc::new(RefCell::new(terminal));
 
-    install_keydown(&window, &state);
-    install_pointerdown(&terminal, &state);
+    install_keydown(&window, &document, &state);
+    install_text_input(&state);
+    install_pointer_gestures(&document, &terminal, &state);
+    install_wheel(&terminal, &state);
     install_color_scheme_listener(&state);
     install_tick(&window, &state);
     install_resize(&window, &terminal);
+    install_viewport_sync(&window, &document, &terminal);
     install_raf_loop(&window, &terminal, &state);
 
+    // Take focus up front so a visitor with a keyboard can type straight
+    // away — but only where a keyboard is already attached. Pre-focusing a
+    // touch device would park `document.activeElement` on the input without
+    // ever showing its on-screen keyboard, and the tap that is supposed to
+    // raise it would then be a no-op focus change on an already-focused
+    // element. Touch devices take focus from the tap instead, in
+    // `install_pointer_gestures`.
+    if !has_coarse_pointer(&window) {
+        state.borrow().text_input.focus();
+    }
+
     Ok(())
+}
+
+/// Whether the device's primary pointer is coarse, i.e. a finger. Used to
+/// keep startup from stealing the focus transition a tap needs; assumes
+/// coarse when the query can't be run, since that's the case with something
+/// to lose.
+fn has_coarse_pointer(window: &web_sys::Window) -> bool {
+    window
+        .match_media("(pointer: coarse)")
+        .ok()
+        .flatten()
+        .map(|query| query.matches())
+        .unwrap_or(true)
 }
 
 /// Compute the cell rectangle the picker should render into given the
@@ -211,11 +269,18 @@ fn install_raf_loop(
     Box::leak(Box::new(next));
 }
 
-fn install_keydown(window: &web_sys::Window, state: &Rc<RefCell<State>>) {
+fn install_keydown(window: &web_sys::Window, document: &Document, state: &Rc<RefCell<State>>) {
     let st = state.clone();
+    let doc = document.clone();
     let cb = Closure::<dyn FnMut(KeyboardEvent)>::new(move |event: KeyboardEvent| {
-        let search_empty = st.borrow().app.search_text().is_empty();
-        let Some(action) = input::from_keyboard(&event, search_empty) else {
+        let (search_empty, text_input_focused) = {
+            let s = st.borrow();
+            (
+                s.app.search_text().is_empty(),
+                s.text_input.is_focused(&doc),
+            )
+        };
+        let Some(action) = input::from_keyboard(&event, search_empty, text_input_focused) else {
             return;
         };
         event.prevent_default();
@@ -227,33 +292,249 @@ fn install_keydown(window: &web_sys::Window, state: &Rc<RefCell<State>>) {
     cb.forget();
 }
 
-fn install_pointerdown(
+/// Feed the offscreen `<input>`'s edits into the picker.
+///
+/// Its whole value is resent on every edit rather than a per-key delta:
+/// mobile keyboards rewrite arbitrary spans (autocorrect, swipe typing,
+/// IME composition) and often report characters through `input` alone,
+/// with no `keydown` to translate.
+fn install_text_input(state: &Rc<RefCell<State>>) {
+    let st = state.clone();
+    let cb = Closure::<dyn FnMut(web_sys::Event)>::new(move |_event| {
+        let value = st.borrow().text_input.value();
+        drive(&st, Action::SetSearch(value));
+    });
+    state
+        .borrow()
+        .text_input
+        .element()
+        .add_event_listener_with_callback("input", cb.as_ref().unchecked_ref())
+        .expect("input listener install");
+    cb.forget();
+}
+
+/// Wire up tap-to-pick and drag-to-scroll on the canvas.
+///
+/// Both gestures start the same way, so a press is only resolved on
+/// release: one that moved more than [`TAP_SLOP_PX`] scrolled the list and
+/// must not also pick an emoji out from under the finger that was scrolling
+/// it. `touch-action: none` in `web/style.css` is what stops the browser
+/// claiming the drag for panning or double-tap zoom before we see it.
+fn install_pointer_gestures(
+    document: &Document,
     terminal: &Rc<RefCell<Terminal<CanvasBackend>>>,
     state: &Rc<RefCell<State>>,
 ) {
-    let st = state.clone();
+    let canvas = terminal.borrow().backend().canvas_element().clone();
+    let gesture: Rc<RefCell<Option<Gesture>>> = Rc::new(RefCell::new(None));
+
+    let down = {
+        let gesture = gesture.clone();
+        let canvas = canvas.clone();
+        Closure::<dyn FnMut(PointerEvent)>::new(move |event: PointerEvent| {
+            // Suppress the compatibility mouse events this press would
+            // otherwise synthesise. They arrive *after* `pointerup`, and
+            // their default action moves focus to the nearest focusable
+            // ancestor — i.e. off the offscreen input and onto `<body>`,
+            // undoing the focus a tap on the search box just took and
+            // dismissing the on-screen keyboard with it.
+            event.prevent_default();
+            // Capture so a drag that wanders off the canvas keeps scrolling
+            // and still ends with a `pointerup` we get to see.
+            let _ = canvas.set_pointer_capture(event.pointer_id());
+            let y = event.client_y() as f64;
+            *gesture.borrow_mut() = Some(Gesture {
+                pointer_id: event.pointer_id(),
+                start_x: event.client_x() as f64,
+                start_y: y,
+                last_y: y,
+                residual_rows: 0.0,
+                dragged: false,
+            });
+        })
+    };
+
+    let mv = {
+        let gesture = gesture.clone();
+        let term = terminal.clone();
+        let st = state.clone();
+        Closure::<dyn FnMut(PointerEvent)>::new(move |event: PointerEvent| {
+            let cell_h = term.borrow().backend().geometry().cell_h;
+            if cell_h <= 0.0 {
+                return;
+            }
+            let rows = {
+                let mut held = gesture.borrow_mut();
+                let Some(g) = held.as_mut().filter(|g| g.pointer_id == event.pointer_id()) else {
+                    return;
+                };
+                let y = event.client_y() as f64;
+                if (event.client_x() as f64 - g.start_x).abs() > TAP_SLOP_PX
+                    || (y - g.start_y).abs() > TAP_SLOP_PX
+                {
+                    g.dragged = true;
+                }
+                g.residual_rows += (y - g.last_y) / cell_h;
+                g.last_y = y;
+                g.take_whole_rows()
+            };
+            // Dragging downwards pulls earlier rows into view, so the list
+            // offset moves the opposite way and the content tracks the
+            // finger.
+            if rows != 0 {
+                drive(&st, Action::Scroll(-rows));
+            }
+        })
+    };
+
+    let up = {
+        let gesture = gesture.clone();
+        let canvas = canvas.clone();
+        let term = terminal.clone();
+        let st = state.clone();
+        let doc = document.clone();
+        Closure::<dyn FnMut(PointerEvent)>::new(move |event: PointerEvent| {
+            let _ = canvas.release_pointer_capture(event.pointer_id());
+            let Some(finished) = take_gesture(&gesture, event.pointer_id()) else {
+                return;
+            };
+            if finished.dragged {
+                return;
+            }
+            let Some((cx, cy)) = pixel_to_cell(
+                &term.borrow(),
+                event.client_x() as f64,
+                event.client_y() as f64,
+            ) else {
+                return;
+            };
+            let position = Position { x: cx, y: cy };
+
+            // A tap on the search box focuses the offscreen input, which is
+            // what raises the on-screen keyboard. It has to happen straight
+            // out of this handler: browsers only show the keyboard for a
+            // focus change a user gesture drove.
+            let in_search = st
+                .borrow()
+                .app
+                .search_area()
+                .is_some_and(|area| area.contains(position));
+            if in_search {
+                st.borrow().text_input.focus_from_gesture(&doc);
+                return;
+            }
+
+            // `hit_test` accounts for the list's scroll offset, so the index
+            // is valid against the filtered list `PickAt` indexes into.
+            let Some(index) = st.borrow().app.hit_test(cx, cy) else {
+                return;
+            };
+            drive(&st, Action::PickAt(index));
+        })
+    };
+
+    let cancel = {
+        let gesture = gesture.clone();
+        let canvas = canvas.clone();
+        Closure::<dyn FnMut(PointerEvent)>::new(move |event: PointerEvent| {
+            let _ = canvas.release_pointer_capture(event.pointer_id());
+            take_gesture(&gesture, event.pointer_id());
+        })
+    };
+
+    for (name, cb) in [
+        ("pointerdown", &down),
+        ("pointermove", &mv),
+        ("pointerup", &up),
+        ("pointercancel", &cancel),
+    ] {
+        canvas
+            .add_event_listener_with_callback(name, cb.as_ref().unchecked_ref())
+            .expect("pointer listener install");
+    }
+    for cb in [down, mv, up, cancel] {
+        cb.forget();
+    }
+}
+
+/// A pointer press in flight on the canvas.
+struct Gesture {
+    pointer_id: i32,
+    start_x: f64,
+    start_y: f64,
+    last_y: f64,
+    /// Sub-row scroll carried between moves, so a slow drag still scrolls
+    /// once it has covered a whole row.
+    residual_rows: f64,
+    /// Set once the pointer travelled past [`TAP_SLOP_PX`]; a gesture that
+    /// scrolled must not also pick on release.
+    dragged: bool,
+}
+
+impl Gesture {
+    /// Hand back the whole rows accumulated so far, keeping the remainder.
+    fn take_whole_rows(&mut self) -> i32 {
+        let rows = self.residual_rows.trunc();
+        self.residual_rows -= rows;
+        rows as i32
+    }
+}
+
+/// End the gesture belonging to `pointer_id`, leaving any other pointer's
+/// gesture (a second finger, say) alone.
+fn take_gesture(gesture: &Rc<RefCell<Option<Gesture>>>, pointer_id: i32) -> Option<Gesture> {
+    let mut held = gesture.borrow_mut();
+    if held.as_ref().is_some_and(|g| g.pointer_id == pointer_id) {
+        held.take()
+    } else {
+        None
+    }
+}
+
+/// Scroll the list on a wheel or trackpad gesture — the desktop twin of the
+/// touch drag installed by [`install_pointer_gestures`].
+fn install_wheel(terminal: &Rc<RefCell<Terminal<CanvasBackend>>>, state: &Rc<RefCell<State>>) {
+    let canvas = terminal.borrow().backend().canvas_element().clone();
     let term = terminal.clone();
-    let cb = Closure::<dyn FnMut(PointerEvent)>::new(move |event: PointerEvent| {
-        let Some((cx, cy)) = pixel_to_cell(
-            &term.borrow(),
-            event.client_x() as f64,
-            event.client_y() as f64,
-        ) else {
+    let st = state.clone();
+    // Sub-row remainder, so trackpads that report a few pixels per event
+    // still scroll instead of rounding every event away to nothing.
+    let residual = Rc::new(RefCell::new(0.0f64));
+    let cb = Closure::<dyn FnMut(WheelEvent)>::new(move |event: WheelEvent| {
+        let cell_h = term.borrow().backend().geometry().cell_h;
+        if cell_h <= 0.0 {
             return;
-        };
-        // `hit_test` accounts for the list's scroll offset, so the index is
-        // valid against the filtered list `PickAt` indexes into.
-        let Some(index) = st.borrow().app.hit_test(cx, cy) else {
-            return;
-        };
+        }
         event.prevent_default();
-        drive(&st, Action::PickAt(index));
+        let delta_rows = match event.delta_mode() {
+            WheelEvent::DOM_DELTA_LINE => event.delta_y(),
+            WheelEvent::DOM_DELTA_PAGE => event.delta_y() * WHEEL_PAGE_ROWS,
+            // `DOM_DELTA_PIXEL`, and anything a future spec adds.
+            _ => event.delta_y() / cell_h,
+        };
+        let rows = {
+            let mut residual = residual.borrow_mut();
+            *residual += delta_rows;
+            let rows = residual.trunc();
+            *residual -= rows;
+            rows as i32
+        };
+        if rows != 0 {
+            drive(&st, Action::Scroll(rows));
+        }
     });
-    web_sys::window()
-        .and_then(|w| w.document())
-        .expect("document")
-        .add_event_listener_with_callback("pointerdown", cb.as_ref().unchecked_ref())
-        .expect("pointerdown listener install");
+    // Wheel listeners are passive by default in some browsers, which makes
+    // `preventDefault` a no-op (and logs a console error); opt out so the
+    // page doesn't also scroll or zoom under the picker.
+    let options = AddEventListenerOptions::new();
+    options.set_passive(false);
+    canvas
+        .add_event_listener_with_callback_and_add_event_listener_options(
+            "wheel",
+            cb.as_ref().unchecked_ref(),
+            &options,
+        )
+        .expect("wheel listener install");
     cb.forget();
 }
 
@@ -301,18 +582,102 @@ fn install_color_scheme_listener(state: &Rc<RefCell<State>>) {
 /// top of the RAF loop does.
 fn install_resize(window: &web_sys::Window, terminal: &Rc<RefCell<Terminal<CanvasBackend>>>) {
     let term = terminal.clone();
-    let cb = Closure::<dyn FnMut(web_sys::Event)>::new(move |_event| {
-        let mut term = term.borrow_mut();
-        if let Err(e) = term.backend_mut().refresh_geometry() {
-            web_sys::console::error_1(&JsValue::from_str(&format!("refresh_geometry: {e}")));
-            return;
-        }
-        let _ = term.clear();
-    });
+    let cb = Closure::<dyn FnMut(web_sys::Event)>::new(move |_event| refresh_terminal(&term));
     window
         .add_event_listener_with_callback("resize", cb.as_ref().unchecked_ref())
         .expect("resize listener install");
     cb.forget();
+}
+
+/// Keep the picker pinned to the *visual* viewport, so it always sits in the
+/// space the user can actually see.
+///
+/// Raising a mobile on-screen keyboard shrinks the visual viewport, and the
+/// browser may pan it as well. Android shrinks the layout viewport along
+/// with it, so `100vh` and the `resize` handler above would cope on their
+/// own; iOS does neither — `100vh` stays the full screen height, and a pan
+/// (which is what the viewport's `scroll` event reports, as a change of
+/// `offsetTop`/`offsetLeft`) leaves the page anchored at the layout
+/// viewport's origin, so the picker can end up clipped or behind the
+/// keyboard. Publishing the height *and* the offsets for `web/style.css` to
+/// size and translate against covers both.
+fn install_viewport_sync(
+    window: &web_sys::Window,
+    document: &Document,
+    terminal: &Rc<RefCell<Terminal<CanvasBackend>>>,
+) {
+    let Some(viewport) = window.visual_viewport() else {
+        return;
+    };
+    let Some(root) = document
+        .document_element()
+        .and_then(|e| e.dyn_into::<HtmlElement>().ok())
+    else {
+        return;
+    };
+    // The backend measured the canvas before these variables existed, so the
+    // first publish can already have resized it out from under the grid.
+    if publish_viewport_metrics(&root, &viewport) {
+        refresh_terminal(terminal);
+    }
+
+    let term = terminal.clone();
+    let vp = viewport.clone();
+    let cb = Closure::<dyn FnMut(web_sys::Event)>::new(move |_event| {
+        // Panning and pinch-zoom fire these continuously. Moving the page is
+        // cheap, but only a height change resizes the canvas, and a repaint
+        // per event would be visible — so redraw on that alone.
+        if publish_viewport_metrics(&root, &vp) {
+            refresh_terminal(&term);
+        }
+    });
+    for name in ["resize", "scroll"] {
+        viewport
+            .add_event_listener_with_callback(name, cb.as_ref().unchecked_ref())
+            .expect("visual viewport listener install");
+    }
+    cb.forget();
+}
+
+/// Publish the visual viewport's height and pan offsets as CSS variables.
+///
+/// Returns whether the *height* changed, which is the only one of the three
+/// that resizes the canvas and so needs the grid re-measured; the offsets
+/// only translate the page.
+fn publish_viewport_metrics(root: &HtmlElement, viewport: &VisualViewport) -> bool {
+    let style = root.style();
+    set_px(&style, "--app-offset-left", viewport.offset_left());
+    set_px(&style, "--app-offset-top", viewport.offset_top());
+
+    let height = viewport.height();
+    if height <= 0.0 {
+        return false;
+    }
+    set_px(&style, "--app-height", height)
+}
+
+/// Set a pixel-valued custom property, returning whether it differed from
+/// what was already there.
+fn set_px(style: &CssStyleDeclaration, name: &str, value: f64) -> bool {
+    let text = format!("{value}px");
+    if style.get_property_value(name).ok().as_deref() == Some(text.as_str()) {
+        return false;
+    }
+    if let Err(e) = style.set_property(name, &text) {
+        web_sys::console::error_1(&e);
+        return false;
+    }
+    true
+}
+
+/// Re-read the canvas geometry and force a full repaint.
+fn refresh_terminal(terminal: &Rc<RefCell<Terminal<CanvasBackend>>>) {
+    let mut term = terminal.borrow_mut();
+    if let Err(e) = term.backend_mut().refresh_geometry() {
+        web_sys::console::error_1(&JsValue::from_str(&format!("refresh_geometry: {e}")));
+        return;
+    }
+    let _ = term.clear();
 }
 
 /// Drive the toast countdown on a fixed interval. The RAF loop redraws
@@ -342,7 +707,16 @@ fn install_tick(window: &web_sys::Window, state: &Rc<RefCell<State>>) {
 /// isn't done when this returns: the clipboard write settles later, and the
 /// toast that reports it has to wait for that answer.
 fn drive(state: &Rc<RefCell<State>>, action: Action) {
-    let outcome = state.borrow_mut().app.handle(action);
+    let outcome = {
+        let mut s = state.borrow_mut();
+        let outcome = s.app.handle(action);
+        // Keep the offscreen input in step with the picker. Rewrites that
+        // came from the picker's side — Escape clearing the search — would
+        // otherwise leave a stale value in the element for the next `input`
+        // event to resurrect.
+        s.text_input.set_value(s.app.search_text());
+        outcome
+    };
     let Outcome::Picked(text) = outcome else {
         return;
     };

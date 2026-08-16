@@ -12,7 +12,9 @@ is based on) [gitmoji-cli] but written in Rust.
 A WebAssembly build of the same picker is hosted at
 <https://zeenix.github.io/gimoji/>. It runs entirely in the browser, with no
 server roundtrip; clicking or pressing Enter on a row copies the selected
-emoji to your clipboard.
+emoji to your clipboard. It works on touch screens too: tap the search box to
+bring up the on-screen keyboard, drag the list to scroll it, and tap a row to
+copy.
 
 To run it locally during development:
 

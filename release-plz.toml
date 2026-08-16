@@ -14,9 +14,15 @@ publish = true
 # We're not a library.
 semver_check = false
 
-# Bump minor version for non-bugfix commits.
+# Bump major version for breaking changes. Without this a 💥 commit is
+# indistinguishable from any other feature and ships a breaking change as a
+# minor release — `semver_check` is off, so nothing else would catch it.
+custom_major_increment_regex = "^💥"
+
+# Bump minor version for non-bugfix commits. 💥 is deliberately absent: it is
+# matched by the major regex above.
 custom_minor_increment_regex = """\
-^(🎨|⚡️|🔥|✨|💄|🎉|🔒️|⬇️|⬆️|📌|➕|➖|🔧|👽️|💥|♿️|💬|🔊|🔇|🚸|🏗️|🗑️)\
+^(🎨|⚡️|🔥|✨|💄|🎉|🔒️|⬇️|⬆️|📌|➕|➖|🔧|👽️|♿️|💬|🔊|🔇|🚸|🏗️|🗑️)\
 """
 
 # PR configuration. `version` is only available when the released packages
