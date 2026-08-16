@@ -167,9 +167,15 @@ impl<'c> App<'c> {
                 }
             }
             Action::PickAt(i) => {
-                let view = self.selection.filtered_view(self.search.text());
+                let mut view = self.selection.filtered_view(self.search.text());
                 match view.get(i) {
-                    Some(emoji) => Outcome::Picked(emoji.emoji().to_string()),
+                    Some(emoji) => {
+                        // Leave the selection on the row that was picked, so
+                        // the highlight follows the pointer rather than
+                        // staying wherever the keyboard last left it.
+                        view.select(i);
+                        Outcome::Picked(emoji.emoji().to_string())
+                    }
                     None => Outcome::Continue,
                 }
             }
@@ -466,6 +472,35 @@ mod tests {
         let mut app = App::new(emojis, &colors);
         let outcome = app.handle(Action::PickAt(2));
         assert_eq!(outcome, Outcome::Picked(emojis[2].emoji().to_string()));
+    }
+
+    #[test]
+    fn pick_at_moves_the_selection_onto_the_picked_row() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        app.handle(Action::PickAt(2));
+        assert_eq!(
+            app.handle(Action::PickFocused),
+            Outcome::Picked(emojis[2].emoji().to_string())
+        );
+        // ...and the keyboard carries on from there, not from the top.
+        app.handle(Action::MoveDown);
+        assert_eq!(
+            app.handle(Action::PickFocused),
+            Outcome::Picked(emojis[3].emoji().to_string())
+        );
+    }
+
+    #[test]
+    fn pick_at_out_of_bounds_index_leaves_the_selection_alone() {
+        let (emojis, colors) = fixture();
+        let mut app = App::new(emojis, &colors);
+        app.handle(Action::PickAt(1));
+        app.handle(Action::PickAt(emojis.len() + 100));
+        assert_eq!(
+            app.handle(Action::PickFocused),
+            Outcome::Picked(emojis[1].emoji().to_string())
+        );
     }
 
     #[test]

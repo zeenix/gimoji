@@ -100,6 +100,14 @@ impl<'s> FilteredView<'s, '_> {
         self.state.offset()
     }
 
+    /// Move the selection to `index`. A no-op when the index is past the end
+    /// of the filtered list, matching [`Self::get`]'s view of it.
+    pub fn select(&mut self, index: usize) {
+        if index < self.emojis.len() {
+            self.state.select(Some(index));
+        }
+    }
+
     /// Move the selection one row up, wrapping to the last row. A no-op when
     /// the filter matched nothing: there is no selection to move and no last
     /// row to wrap onto.
