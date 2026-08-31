@@ -8,7 +8,7 @@ export default {
   ],
   plugins: ["@gimoji/gimoji"],
   rules: {
-    "body-max-line-length": [1, "always", 75],
+    "body-max-line-length": [2, "always", 74],
     "header-max-length": [2, "always", 72],
     "start-with-gimoji": [2, "always"],
   },
