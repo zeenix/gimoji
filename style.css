@@ -1,0 +1,80 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  /* `--app-height` tracks the *visual* viewport (see `install_viewport_sync`
+     in src/lib.rs). On mobile the on-screen keyboard shrinks that without
+     necessarily shrinking `100%`, so sizing off it is what keeps the whole
+     picker above the keyboard. */
+  height: var(--app-height, 100%);
+  overflow: hidden;
+  background: #0e0e0e;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  html, body {
+    background: #f5f5f5;
+    color-scheme: light;
+  }
+}
+/* Centre the canvas on the viewport when the cap kicks in, and follow the
+   visual viewport when the browser pans it — iOS does that to reach a
+   focused field once the keyboard is up, and without this the picker stays
+   anchored to the layout viewport and is left partly off-screen. */
+body {
+  display: grid;
+  place-content: center;
+  transform: translate(var(--app-offset-left, 0px), var(--app-offset-top, 0px));
+}
+/* The canvas the picker paints into (see src/canvas_backend.rs). The
+   backend reads `getBoundingClientRect()` to size its grid in cells, so
+   any width/height cap applied here flows through. The picker itself is
+   visually centred inside the grid via `App::render_in_area` (see
+   lib.rs); the surrounding cells stay transparent so the page background
+   shows through. */
+#gimoji-canvas {
+  display: block;
+  /* Cap the picker box so the backend only allocates ~110 x 36 cells
+     instead of one per (window/cell-size). On large monitors this keeps
+     both the cell-shadow buffer and the drawing buffer bounded. The
+     `min(…)` form lets small viewports use the full screen. */
+  width: min(100vw, 1100px);
+  height: min(var(--app-height, 100vh), 720px);
+  /* The canvas handles pointer gestures itself (tap to pick, drag to
+     scroll), so the browser must not claim them for panning, double-tap
+     zoom or text selection first — without this, touch drags never reach
+     the pointermove handler. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Offscreen text field that owns keyboard input; focusing it is what
+   raises the on-screen keyboard on mobile. It's kept visually empty (the
+   picker draws the search text itself) but has to stay rendered and
+   focusable, so it can't use `display: none` or `visibility: hidden`.
+   Pointer events are the canvas's business — this element is only ever
+   focused programmatically. */
+#gimoji-input {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  pointer-events: none;
+  /* Anything below 16px makes iOS Safari zoom the page on focus. */
+  font-size: 16px;
+}
+#fallback {
+  color: #ddd;
+  font-family: system-ui, sans-serif;
+  padding: 1rem;
+}
+@media (prefers-color-scheme: light) {
+  #fallback {
+    color: #333;
+  }
+}
