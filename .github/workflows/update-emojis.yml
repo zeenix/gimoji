@@ -38,13 +38,13 @@ jobs:
         with:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           commit-message: |
-            🔄 Update emoji database from gitmoji upstream
+            🗃️ Update emoji database from gitmoji upstream
 
             - Total emojis: ${{ steps.merge.outputs.total_emojis }}
             - Upstream emojis: ${{ steps.merge.outputs.upstream_emojis }}
             - New from upstream: ${{ steps.merge.outputs.new_upstream_emojis }}
             - Custom emojis preserved: ${{ steps.merge.outputs.custom_emojis }}
-          title: "🔄 Update emoji database"
+          title: "🗃️ Update emoji database"
           body: |
             ## Emoji Database Update
 
