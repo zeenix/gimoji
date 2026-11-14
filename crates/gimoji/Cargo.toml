@@ -20,4 +20,4 @@ arboard = { version = "3.4.0", default-features = false, features = [
 terminal-light = "1.4.0"
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.31", default-features = false, features = ["process"] }
+nix = { version = "0.32", default-features = false, features = ["process"] }
